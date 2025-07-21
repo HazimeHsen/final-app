@@ -1,32 +1,31 @@
 "use client";
 
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
-  Dimensions,
+  ActivityIndicator,
+  TouchableOpacity,
+  ScrollView,
 } from "react-native";
 import { useLocalSearchParams, Link, useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { courseAPI, videoAPI, lessonAPI } from "../../../../../../api";
-import CourseLessonsList from "../../../../../../components/CourseLessonsList";
-import { AuthContext } from "../../../../../../contexts/AuthContext";
+
+import { lessonAPI, courseAPI, videoAPI } from "../../../../../../../api";
+import CourseLessonsList from "../../../../../../../components/common/CourseLessonList";
 
 const CourseDetailStudent = () => {
-  const { courseId, levelId } = useLocalSearchParams();
+  const { courseId: courseIdParam, levelId: levelIdParam } =
+    useLocalSearchParams();
+  const courseId = Number.parseInt(courseIdParam, 10);
+  const levelId = Number.parseInt(levelIdParam, 10);
+
   const router = useRouter();
-  const { user } = useContext(AuthContext);
 
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [userProgress, setUserProgress] = useState({
-    completedCourses: [],
-    currentCourse: null,
-    totalXP: 0,
-  });
 
   useEffect(() => {
     const fetchCourseDetails = async () => {
@@ -84,77 +83,41 @@ const CourseDetailStudent = () => {
         setLoading(false);
       }
     };
+
     fetchCourseDetails();
   }, [courseId]);
 
-  const getDifficultyColor = (difficulty) => {
-    switch (difficulty) {
-      case "Easy":
-        return styles.difficultyEasy;
-      case "Medium":
-        return styles.difficultyMedium;
-      case "Hard":
-        return styles.difficultyHard;
-      default:
-        return styles.difficultyDefault;
-    }
-  };
-
-  const getProgressPercentage = (completed, total) => {
-    return total > 0 ? Math.round((completed / total) * 100) : 0;
-  };
-
   if (loading) {
     return (
-      <LinearGradient colors={["#f3e8ff", "#fce7f3"]} style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <View style={styles.loadingSpinner} />
-        </View>
-      </LinearGradient>
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#8b5cf6" />
+        <Text style={styles.loadingText}>Loading course details...</Text>
+      </View>
     );
   }
 
   if (!course) {
     return (
-      <LinearGradient colors={["#f3e8ff", "#fce7f3"]} style={styles.container}>
-        <View style={styles.notFoundContainer}>
-          <Text style={styles.notFoundTitle}>Course not found</Text>
-          <Link href="/student/dashboard" asChild>
-            <TouchableOpacity style={styles.backToLevelsButton}>
-              <ArrowLeft size={16} color="#8b5cf6" />
-              <Text style={styles.backToLevelsButtonText}>Back to Levels</Text>
-            </TouchableOpacity>
-          </Link>
-        </View>
-      </LinearGradient>
+      <View style={styles.notFoundContainer}>
+        <Text style={styles.notFoundTitle}>Course not found</Text>
+        <Link href="/student/levels" asChild>
+          <TouchableOpacity style={styles.backToLevelsButton}>
+            <ArrowLeft size={16} color="#8b5cf6" />
+            <Text style={styles.backToLevelsButtonText}>Back to Levels</Text>
+          </TouchableOpacity>
+        </Link>
+      </View>
     );
   }
 
-  const coursesWithContent = course.lessons.filter(
-    (lesson) => lesson.totalVideos > 0
-  );
-  const completedCoursesCount = coursesWithContent.filter(
-    (lesson) => lesson.isCompleted
-  ).length;
-  const levelProgress = getProgressPercentage(
-    completedCoursesCount,
-    coursesWithContent.length
-  );
-
-  const totalEstimatedHours = course.lessons.reduce(
-    (sum, lesson) => sum + (Number.parseInt(lesson.duration_minutes) || 0),
-    0
-  );
-  const totalXPReward = course.lessons.reduce(
-    (sum, lesson) => sum + (lesson.xp_reward || 0),
-    0
-  );
-
   return (
-    <LinearGradient colors={["#f3e8ff", "#fce7f3"]} style={styles.container}>
-      <View style={styles.contentWrapper}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+    >
+      <View style={styles.innerContainer}>
         {/* Breadcrumb */}
-        <View style={styles.breadcrumbContainer}>
+        <View style={styles.breadcrumb}>
           <Link href="/student/dashboard" asChild>
             <TouchableOpacity>
               <Text style={styles.breadcrumbLink}>Levels</Text>
@@ -171,24 +134,25 @@ const CourseDetailStudent = () => {
         </View>
 
         {/* Course Header + Progress */}
-        <View style={styles.courseHeaderProgressCard}>
-          <View style={styles.courseHeaderProgressContent}>
-            <Text style={styles.courseHeaderProgressTitle}>{course.title}</Text>
-            <Text style={styles.courseHeaderProgressSubtitle}>
+        <View style={styles.courseHeaderCard}>
+          <View style={styles.courseHeaderContent}>
+            <Text style={styles.courseHeaderTitle}>{course.title}</Text>
+            <Text style={styles.courseHeaderProgressText}>
               {course.completedLessons} of {course.totalLessons} lessons
               completed
             </Text>
           </View>
-          <View style={styles.courseHeaderProgressBarBackground}>
-            <View
-              style={[
-                styles.courseHeaderProgressBarFill,
-                { width: `${course.progress}%` },
-              ]}
+          <View style={styles.progressBarBg}>
+            <LinearGradient
+              colors={["#8b5cf6", "#ec4899"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={[styles.progressBarFill, { width: `${course.progress}%` }]}
             />
           </View>
         </View>
 
+        {/* Lessons List */}
         <CourseLessonsList
           course={course}
           courseId={course.id}
@@ -198,24 +162,35 @@ const CourseDetailStudent = () => {
         {/* Back Button */}
         <View style={styles.backButtonContainer}>
           <Link href={`/student/levels/${levelId}`} asChild>
-            <TouchableOpacity style={styles.backButton}>
+            <TouchableOpacity style={styles.backToCoursesButton}>
               <ArrowLeft size={16} color="#8b5cf6" />
-              <Text style={styles.backButtonText}>Back to Courses</Text>
+              <Text style={styles.backToCoursesButtonText}>
+                Back to Courses
+              </Text>
             </TouchableOpacity>
           </Link>
         </View>
       </View>
-    </LinearGradient>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#f9fafb",
   },
-  contentWrapper: {
-    paddingHorizontal: 16,
+  contentContainer: {
+    flexGrow: 1,
     paddingTop: 20,
+    paddingBottom: 20,
+    alignItems: "center",
+  },
+  innerContainer: {
+    width: "100%",
+    maxWidth: 1200,
+    paddingHorizontal: 16,
+    paddingVertical: 32,
   },
   loadingContainer: {
     flex: 1,
@@ -223,14 +198,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#f9fafb",
   },
-  loadingSpinner: {
-    height: 48,
-    width: 48,
-    borderRadius: 9999,
-    borderWidth: 4,
-    borderColor: "#f3f4f6",
-    borderBottomColor: "#ea580c",
-    transform: [{ rotate: "45deg" }],
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: "#4b5563",
   },
   notFoundContainer: {
     flex: 1,
@@ -250,78 +221,84 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
   },
   backToLevelsButtonText: {
     color: "#8b5cf6",
     fontWeight: "500",
     marginLeft: 8,
   },
-  breadcrumbContainer: {
+
+  breadcrumb: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    fontSize: 14,
-    color: "#4b5563",
     marginBottom: 32,
   },
   breadcrumbLink: {
-    color: "#8b5cf6",
-  },
-  breadcrumbSeparator: {
+    fontSize: 14,
     color: "#4b5563",
   },
+  breadcrumbSeparator: {
+    fontSize: 14,
+    color: "#4b5563",
+    marginHorizontal: 8,
+  },
   breadcrumbCurrent: {
+    fontSize: 14,
     color: "#1f2937",
     fontWeight: "500",
   },
-  courseHeaderProgressCard: {
-    backgroundColor: "#ffedd5",
+
+  courseHeaderCard: {
+    backgroundColor: "#f3e8ff",
     padding: 16,
-    borderRadius: 16,
+    borderRadius: 12,
     marginBottom: 24,
   },
-  courseHeaderProgressContent: {
+  courseHeaderContent: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-  courseHeaderProgressTitle: {
+  courseHeaderTitle: {
     fontSize: 20,
     fontWeight: "600",
-    color: "#9a3412",
+    color: "#6d28d9",
   },
-  courseHeaderProgressSubtitle: {
+  courseHeaderProgressText: {
     fontSize: 14,
     fontWeight: "500",
     color: "#4b5563",
   },
-  courseHeaderProgressBarBackground: {
+  progressBarBg: {
     width: "100%",
     backgroundColor: "#d1d5db",
     borderRadius: 9999,
     height: 8,
     marginTop: 8,
   },
-  courseHeaderProgressBarFill: {
-    backgroundColor: "#f97316",
+  progressBarFill: {
     height: 8,
     borderRadius: 9999,
   },
+
   backButtonContainer: {
     marginTop: 32,
     alignItems: "center",
   },
-  backButton: {
+  backToCoursesButton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    justifyContent: "center",
     paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
   },
-  backButtonText: {
+  backToCoursesButtonText: {
     color: "#8b5cf6",
     fontWeight: "500",
+    marginLeft: 8,
   },
 });
 

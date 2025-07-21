@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useContext } from "react"
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native"
 import { useRouter } from "expo-router" // Changed from useNavigation

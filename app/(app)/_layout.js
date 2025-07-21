@@ -1,5 +1,3 @@
-"use client";
-
 import { Tabs } from "expo-router";
 import { LogOut, User, Settings } from "lucide-react-native";
 import { TouchableOpacity, Text, StyleSheet } from "react-native";
