@@ -18,10 +18,14 @@
       "bundleIdentifier": "com.yourcompany.yourappname",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "Allow $(PRODUCT_NAME) to access your photos to let you upload profile pictures.",
-        "NSLocationWhenInUseUsageDescription": "Allow $(PRODUCT_NAME) to access your location to find matches near you."
+        "NSLocationWhenInUseUsageDescription": "Allow $(PRODUCT_NAME) to access your location to find matches near you.",
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        }
       }
     },
     "android": {
+      "usesCleartextTraffic": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"

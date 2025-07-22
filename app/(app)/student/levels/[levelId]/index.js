@@ -27,8 +27,9 @@ import {
 import { levelAPI, courseAPI, videoAPI } from "../../../../../api";
 
 const LevelDetailStudent = () => {
-  const { levelId: levelIdParam } = useLocalSearchParams();
-  const levelId = Number.parseInt(levelIdParam, 10);
+  const searchParams = useLocalSearchParams();
+  const levelIdParam = searchParams?.levelId;
+  const levelId = levelIdParam ? Number.parseInt(levelIdParam, 10) : null;
 
   const router = useRouter();
 
@@ -105,6 +106,20 @@ const LevelDetailStudent = () => {
   const getProgressPercentage = (completed, total) => {
     return total > 0 ? Math.round((completed / total) * 100) : 0;
   };
+
+  if (!levelId || isNaN(levelId)) {
+    return (
+      <View style={styles.notFoundContainer}>
+        <Text style={styles.notFoundTitle}>Invalid Level ID</Text>
+        <Link href="/student/dashboard" asChild>
+          <TouchableOpacity style={styles.backToLevelsButton}>
+            <ArrowLeft size={16} color="#8b5cf6" />
+            <Text style={styles.backToLevelsButtonText}>Back to Levels</Text>
+          </TouchableOpacity>
+        </Link>
+      </View>
+    );
+  }
 
   if (loading) {
     return (
@@ -184,7 +199,9 @@ const LevelDetailStudent = () => {
               <Text style={styles.levelEmoji}>{level.emoji}</Text>
               <View>
                 <Text style={styles.levelTitle}>{level.title} Level</Text>
-                <Text style={styles.levelDescription}>{level.description}</Text>
+                <Text style={styles.levelDescription}>
+                  {level.description || "No description available"}
+                </Text>
                 <View style={styles.levelStatsRow}>
                   <View style={styles.levelStatItem}>
                     <BookOpen size={16} color="white" />
@@ -369,7 +386,6 @@ const LevelDetailStudent = () => {
                         ? "Continue"
                         : "Start Course"}
                     </Text>
-                   
                   </Link>
                 ) : (
                   <TouchableOpacity disabled style={styles.courseLockedButton}>
@@ -498,7 +514,6 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 
-  // Breadcrumb
   breadcrumb: {
     flexDirection: "row",
     alignItems: "center",
@@ -519,7 +534,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
 
-  // Level Header
   levelHeaderCard: {
     borderRadius: 24,
     padding: 6,
@@ -612,7 +626,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
 
-  // Progress Stats Grid
   progressStatsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -670,11 +683,10 @@ const styles = StyleSheet.create({
     color: "#4b5563",
   },
 
-  // Courses Grid
   coursesGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "center", // Centered for better wrapping
+    justifyContent: "center",
   },
   courseCard: {
     position: "relative",
@@ -687,12 +699,12 @@ const styles = StyleSheet.create({
     shadowRadius: 15,
     elevation: 10,
     borderWidth: 2,
-    // Removed height: "100%" to allow natural sizing
-    justifyContent: "space-between", // Keep this to distribute content vertically
-    width: "100%", // Full width on small screens
-    maxWidth: 380, // Max width for larger screens
-    marginHorizontal: 12, // Spacing between cards horizontally
-    marginBottom: 24, // Spacing between cards vertically
+
+    justifyContent: "space-between",
+    width: "100%",
+    maxWidth: 380,
+    marginHorizontal: 12,
+    marginBottom: 24,
   },
   courseCardUnlocked: {
     borderColor: "#ede9fe",
@@ -852,7 +864,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
 
-  // Level Completion Reward
   levelCompletedCard: {
     marginTop: 48,
     borderRadius: 24,
@@ -902,7 +913,6 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
 
-  // Back to All Levels Button
   backToAllLevelsContainer: {
     marginTop: 32,
     alignItems: "center",

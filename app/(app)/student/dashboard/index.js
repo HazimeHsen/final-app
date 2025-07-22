@@ -7,8 +7,8 @@ import { LinearGradient } from "expo-linear-gradient"
 import { Lock, CheckCircle, ArrowRight } from "lucide-react-native"
 import * as WebBrowser from "expo-web-browser"
 
-import { levelAPI, videoAPI, examAPI, userAPI, paymentAPI } from "../../../api"
-import { AuthContext } from "../../../contexts/AuthContext"
+import { levelAPI, videoAPI, examAPI, userAPI, paymentAPI } from "../../../../api"
+import { AuthContext } from "../../../../contexts/AuthContext"
 
 const LevelsStudent = () => {
   const { user } = useContext(AuthContext)

@@ -1,96 +1,115 @@
-"use client"
+"use client";
 
-import { useEffect, useState, useContext } from "react"
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, ActivityIndicator, Alert } from "react-native"
-import { Search, MessageCircle, Send } from "lucide-react-native"
-import { Picker } from "@react-native-picker/picker" // For select dropdown
+import { useEffect, useState, useContext } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+  ScrollView,
+  ActivityIndicator,
+  Alert,
+} from "react-native";
+import { Search, MessageCircle, Send } from "lucide-react-native";
+import { Picker } from "@react-native-picker/picker";
 
-import { commentAPI } from "../../api"
-import { AuthContext } from "../../contexts/AuthContext" // Adjusted path
+import { commentAPI } from "../../api";
+import { AuthContext } from "../../contexts/AuthContext";
 
 const QASection = ({ videoId }) => {
-  const { user } = useContext(AuthContext)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [filterType, setFilterType] = useState("all")
-  const [sortBy, setSortBy] = useState("recent")
-  const [showNewQuestion, setShowNewQuestion] = useState(false)
-  const [newQuestion, setNewQuestion] = useState({ content: "" })
-  const [expandedAnswers, setExpandedAnswers] = useState(new Set())
-  const [comments, setComments] = useState([])
-  const [loading, setLoading] = useState(true)
+  const { user } = useContext(AuthContext);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterType, setFilterType] = useState("all");
+  const [sortBy, setSortBy] = useState("recent");
+  const [showNewQuestion, setShowNewQuestion] = useState(false);
+  const [newQuestion, setNewQuestion] = useState({ content: "" });
+  const [expandedAnswers, setExpandedAnswers] = useState(new Set());
+  const [comments, setComments] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchComments = async () => {
-      setLoading(true)
+      setLoading(true);
       try {
-        const res = await commentAPI.getByVideo(videoId)
+        const res = await commentAPI.getByVideo(videoId);
         const mapped = res.data.map((c) => ({
-          id: c.id, // Use actual comment ID
+          id: c.id,
           commentId: c.id,
           title: `Comment by ${c.user_name || "Unknown"}`,
           content: c.content,
           author: c.user_name || "Unknown",
           authorId: c.user_id,
-          authorAvatar: "/placeholder.svg", // Placeholder, consider generating initials
+          authorAvatar: "/placeholder.svg",
           timestamp: new Date(c.created_at).toLocaleString(),
-          upvotes: 0, // Assuming no upvote/downvote data from API
+          upvotes: 0,
           downvotes: 0,
-          isInstructor: false, // Assuming no instructor flag from API
+          isInstructor: false,
           answers: (c.replies || []).map((r) => ({
-            id: r.id, // Use actual reply ID
+            id: r.id,
             content: r.content,
             author: r.user_name || "Unknown",
             authorId: r.user_id,
             authorAvatar: "/placeholder.svg",
             timestamp: new Date(r.created_at).toLocaleString(),
           })),
-        }))
-        setComments(mapped)
+        }));
+        setComments(mapped);
       } catch (err) {
-        console.error("Error fetching comments", err)
-        Alert.alert("Error", "Failed to load Q&A. Please try again.")
+        console.error("Error fetching comments", err);
+        Alert.alert("Error", "Failed to load Q&A. Please try again.");
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
     if (videoId) {
-      fetchComments()
+      fetchComments();
     }
-  }, [videoId])
+  }, [videoId]);
 
   const handleDelete = async (commentId) => {
-    Alert.alert("Confirm Delete", "Are you sure you want to delete this comment?", [
-      {
-        text: "Cancel",
-        style: "cancel",
-      },
-      {
-        text: "Delete",
-        onPress: async () => {
-          try {
-            await commentAPI.delete(commentId)
-            setComments((prev) => prev.filter((c) => c.commentId !== commentId))
-            Alert.alert("Success", "Comment deleted successfully.")
-          } catch (err) {
-            console.error("Failed to delete comment", err)
-            Alert.alert("Error", err.response?.data?.message || "Failed to delete comment. Please try again.")
-          }
+    Alert.alert(
+      "Confirm Delete",
+      "Are you sure you want to delete this comment?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
         },
-      },
-    ])
-  }
+        {
+          text: "Delete",
+          onPress: async () => {
+            try {
+              await commentAPI.delete(commentId);
+              setComments((prev) =>
+                prev.filter((c) => c.commentId !== commentId)
+              );
+              Alert.alert("Success", "Comment deleted successfully.");
+            } catch (err) {
+              console.error("Failed to delete comment", err);
+              Alert.alert(
+                "Error",
+                err.response?.data?.message ||
+                  "Failed to delete comment. Please try again."
+              );
+            }
+          },
+        },
+      ]
+    );
+  };
 
   const handleSubmit = async () => {
     if (!newQuestion.content.trim()) {
-      Alert.alert("Input Required", "Please enter your question.")
-      return
+      Alert.alert("Input Required", "Please enter your question.");
+      return;
     }
     try {
       const res = await commentAPI.create({
         video_id: videoId,
         content: newQuestion.content,
-      })
-      const c = res.data.comment
+      });
+      const c = res.data.comment;
       const newEntry = {
         id: c.id,
         commentId: c.id,
@@ -104,41 +123,45 @@ const QASection = ({ videoId }) => {
         downvotes: 0,
         isInstructor: false,
         answers: [],
-      }
-      setComments([newEntry, ...comments])
-      setNewQuestion({ content: "" })
-      setShowNewQuestion(false)
-      Alert.alert("Success", "Question posted successfully!")
+      };
+      setComments([newEntry, ...comments]);
+      setNewQuestion({ content: "" });
+      setShowNewQuestion(false);
+      Alert.alert("Success", "Question posted successfully!");
     } catch (err) {
-      console.error("Failed to submit comment", err)
-      Alert.alert("Error", err.response?.data?.message || "Failed to post question. Please try again.")
+      console.error("Failed to submit comment", err);
+      Alert.alert(
+        "Error",
+        err.response?.data?.message ||
+          "Failed to post question. Please try again."
+      );
     }
-  }
+  };
 
   const toggleAnswers = (id) => {
     setExpandedAnswers((prev) => {
-      const copy = new Set(prev)
-      copy.has(id) ? copy.delete(id) : copy.add(id)
-      return copy
-    })
-  }
+      const copy = new Set(prev);
+      copy.has(id) ? copy.delete(id) : copy.add(id);
+      return copy;
+    });
+  };
 
   const filtered = comments.filter((c) => {
     const searchMatch =
       c.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.title.toLowerCase().includes(searchTerm.toLowerCase())
+      c.title.toLowerCase().includes(searchTerm.toLowerCase());
     const filterMatch =
       filterType === "all" ||
       (filterType === "unanswered" && c.answers.length === 0) ||
-      (filterType === "instructor" && c.answers.some((a) => a.isInstructor)) // Assuming isInstructor is available
-    return searchMatch && filterMatch
-  })
+      (filterType === "instructor" && c.answers.some((a) => a.isInstructor));
+    return searchMatch && filterMatch;
+  });
 
   const sorted = [...filtered].sort((a, b) =>
     sortBy === "popular"
       ? b.upvotes - b.downvotes - (a.upvotes - a.downvotes)
-      : new Date(b.timestamp) - new Date(a.timestamp),
-  )
+      : new Date(b.timestamp) - new Date(a.timestamp)
+  );
 
   if (loading) {
     return (
@@ -146,7 +169,7 @@ const QASection = ({ videoId }) => {
         <ActivityIndicator size="large" color="#8b5cf6" />
         <Text style={styles.loadingText}>Loading Q&A...</Text>
       </View>
-    )
+    );
   }
 
   return (
@@ -155,14 +178,18 @@ const QASection = ({ videoId }) => {
         <View style={styles.sectionHeader}>
           <View>
             <Text style={styles.sectionTitle}>Q&A</Text>
-            <Text style={styles.sectionSubtitle}>{comments.length} comments</Text>
+            <Text style={styles.sectionSubtitle}>
+              {comments.length} comments
+            </Text>
           </View>
-          <TouchableOpacity onPress={() => setShowNewQuestion(!showNewQuestion)} style={styles.askQuestionButton}>
+          <TouchableOpacity
+            onPress={() => setShowNewQuestion(!showNewQuestion)}
+            style={styles.askQuestionButton}
+          >
             <Text style={styles.askQuestionButtonText}>Ask Question</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Filters */}
         <View style={styles.filterContainer}>
           <View style={styles.searchInputContainer}>
             <Search size={16} color="#9ca3af" style={styles.searchIcon} />
@@ -172,23 +199,6 @@ const QASection = ({ videoId }) => {
               onChangeText={setSearchTerm}
               style={styles.searchInput}
             />
-          </View>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={filterType}
-              onValueChange={(itemValue) => setFilterType(itemValue)}
-              style={styles.picker}
-            >
-              <Picker.Item label="All" value="all" />
-              <Picker.Item label="Unanswered" value="unanswered" />
-              <Picker.Item label="Instructor Answered" value="instructor" />
-            </Picker>
-          </View>
-          <View style={styles.pickerContainer}>
-            <Picker selectedValue={sortBy} onValueChange={(itemValue) => setSortBy(itemValue)} style={styles.picker}>
-              <Picker.Item label="Recent" value="recent" />
-              <Picker.Item label="Popular" value="popular" />
-            </Picker>
           </View>
         </View>
 
@@ -205,11 +215,17 @@ const QASection = ({ videoId }) => {
               required
             />
             <View style={styles.formButtons}>
-              <TouchableOpacity onPress={handleSubmit} style={styles.postButton}>
+              <TouchableOpacity
+                onPress={handleSubmit}
+                style={styles.postButton}
+              >
                 <Send size={16} color="white" style={styles.buttonIcon} />
                 <Text style={styles.postButtonText}>Post</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => setShowNewQuestion(false)} style={styles.cancelButton}>
+              <TouchableOpacity
+                onPress={() => setShowNewQuestion(false)}
+                style={styles.cancelButton}
+              >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
             </View>
@@ -222,28 +238,36 @@ const QASection = ({ videoId }) => {
             <View key={q.id} style={styles.commentCard}>
               <View style={styles.commentHeader}>
                 <View style={styles.avatarContainer}>
-                  <Text style={styles.avatarText}>{q.author?.charAt(0) || "U"}</Text>
+                  <Text style={styles.avatarText}>
+                    {q.author?.charAt(0) || "U"}
+                  </Text>
                 </View>
                 <View style={styles.commentContent}>
                   <View style={styles.commentMetaRow}>
-                    <Text style={styles.commentAuthor}>{q.title}</Text>
+                    <Text style={styles.commentText}>{q.content}</Text>
                     {user?.id === q.authorId && (
-                      <TouchableOpacity onPress={() => handleDelete(q.commentId)} style={styles.deleteButton}>
+                      <TouchableOpacity
+                        onPress={() => handleDelete(q.commentId)}
+                        style={styles.deleteButton}
+                      >
                         <Text style={styles.deleteButtonText}>Delete</Text>
                       </TouchableOpacity>
                     )}
                   </View>
-                  <Text style={styles.commentText}>{q.content}</Text>
                   <View style={styles.commentFooter}>
                     <Text style={styles.commentTimestamp}>
                       {q.author} • {q.timestamp}
                     </Text>
                     <View style={styles.commentActions}>
                       {q.answers.length > 0 && (
-                        <TouchableOpacity onPress={() => toggleAnswers(q.id)} style={styles.toggleAnswersButton}>
+                        <TouchableOpacity
+                          onPress={() => toggleAnswers(q.id)}
+                          style={styles.toggleAnswersButton}
+                        >
                           <MessageCircle size={16} color="#2563eb" />
                           <Text style={styles.toggleAnswersText}>
-                            {q.answers.length} Answer{q.answers.length > 1 ? "s" : ""}
+                            {q.answers.length} Answer
+                            {q.answers.length > 1 ? "s" : ""}
                           </Text>
                         </TouchableOpacity>
                       )}
@@ -255,7 +279,9 @@ const QASection = ({ videoId }) => {
                         <View key={a.id} style={styles.answerCard}>
                           <Text style={styles.answerAuthor}>{a.author}</Text>
                           <Text style={styles.answerContent}>{a.content}</Text>
-                          <Text style={styles.answerTimestamp}>{a.timestamp}</Text>
+                          <Text style={styles.answerTimestamp}>
+                            {a.timestamp}
+                          </Text>
                         </View>
                       ))}
                     </View>
@@ -267,22 +293,24 @@ const QASection = ({ videoId }) => {
         </View>
         {!loading && sorted.length === 0 && (
           <View style={styles.noCommentsContainer}>
-            <MessageCircle size={40} color="#9ca3af" style={styles.noCommentsIcon} />
+            <MessageCircle
+              size={40}
+              color="#9ca3af"
+              style={styles.noCommentsIcon}
+            />
             <Text style={styles.noCommentsText}>No comments yet</Text>
           </View>
         )}
       </View>
     </ScrollView>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   scrollViewContent: {
     flexGrow: 1,
-    paddingVertical: 24, // space-y-6
   },
   container: {
-    paddingHorizontal: 16,
   },
   loadingContainer: {
     flex: 1,
@@ -296,37 +324,35 @@ const styles = StyleSheet.create({
     color: "#4b5563",
   },
 
-  // Section Header
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 24, // space-y-6
+    marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 20, // text-xl
-    fontWeight: "600", // font-semibold
-    color: "#1f2937", // text-gray-900
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#1f2937",
   },
   sectionSubtitle: {
-    fontSize: 14, // text-sm
-    color: "#4b5563", // text-gray-600
+    fontSize: 14,
+    color: "#4b5563",
   },
   askQuestionButton: {
-    backgroundColor: "#2563eb", // bg-blue-600
-    paddingHorizontal: 16, // px-4
-    paddingVertical: 8, // py-2
-    borderRadius: 8, // rounded-lg
+    backgroundColor: "#2563eb",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
   },
   askQuestionButtonText: {
     color: "white",
   },
 
-  // Filters
   filterContainer: {
-    flexDirection: "column", // sm:flex-row
-    gap: 16, // gap-4
-    marginBottom: 24, // space-y-6
+    flexDirection: "column",
+    gap: 16,
+    marginBottom: 24,
   },
   searchInputContainer: {
     flex: 1,
@@ -334,18 +360,18 @@ const styles = StyleSheet.create({
   },
   searchIcon: {
     position: "absolute",
-    left: 12, // left-3
+    left: 12,
     top: "50%",
-    marginTop: -8, // -translate-y-1/2
+    marginTop: -8,
   },
   searchInput: {
     width: "100%",
-    paddingLeft: 40, // pl-10
-    paddingRight: 16, // pr-4
-    paddingVertical: 8, // py-2
+    paddingLeft: 40,
+    paddingRight: 16,
+    paddingVertical: 8,
     borderWidth: 1,
-    borderColor: "#d1d5db", // border-gray-300
-    borderRadius: 8, // rounded-lg
+    borderColor: "#d1d5db",
+    borderRadius: 8,
     fontSize: 16,
     color: "#1f2937",
   },
@@ -354,47 +380,46 @@ const styles = StyleSheet.create({
     borderColor: "#d1d5db",
     borderRadius: 8,
     backgroundColor: "white",
-    overflow: "hidden", // Ensures border radius applies to picker
+    overflow: "hidden",
   },
   picker: {
-    height: 40, // Adjust height as needed
-    width: 150, // Adjust width as needed
+    height: 40,
+    width: 150,
     color: "#1f2937",
   },
 
-  // Ask Form
   askForm: {
-    backgroundColor: "#f9fafb", // bg-gray-50
-    padding: 16, // p-4
-    borderRadius: 8, // rounded
+    backgroundColor: "#f9fafb",
+    padding: 16,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#e5e7eb", // border
-    marginBottom: 24, // space-y-4
+    borderColor: "#e5e7eb",
+    marginBottom: 24,
   },
   textArea: {
     width: "100%",
-    paddingHorizontal: 12, // px-3
-    paddingVertical: 8, // py-2
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderWidth: 1,
-    borderColor: "#d1d5db", // border-gray-300
-    borderRadius: 8, // rounded-lg
-    textAlignVertical: "top", // For multiline
+    borderColor: "#d1d5db",
+    borderRadius: 8,
+    textAlignVertical: "top",
     fontSize: 16,
     color: "#1f2937",
-    marginBottom: 16, // space-y-4
+    marginBottom: 16,
   },
   formButtons: {
     flexDirection: "row",
-    gap: 8, // gap-2
+    gap: 8,
   },
   postButton: {
-    backgroundColor: "#2563eb", // bg-blue-600
-    paddingHorizontal: 16, // px-4
-    paddingVertical: 8, // py-2
-    borderRadius: 8, // rounded-lg
+    backgroundColor: "#2563eb",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
     flexDirection: "row",
     alignItems: "center",
-    gap: 8, // gap-2
+    gap: 8,
   },
   postButtonText: {
     color: "white",
@@ -403,41 +428,40 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
   cancelButton: {
-    backgroundColor: "#d1d5db", // bg-gray-300
-    paddingHorizontal: 16, // px-4
-    paddingVertical: 8, // py-2
-    borderRadius: 8, // rounded-lg
+    backgroundColor: "#d1d5db",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
   },
   cancelButtonText: {
     color: "#1f2937",
   },
 
-  // Comments List
   commentsList: {
-    gap: 16, // space-y-4
+    gap: 16,
   },
   commentCard: {
     backgroundColor: "white",
     borderWidth: 1,
-    borderColor: "#e5e7eb", // border
-    borderRadius: 8, // rounded
-    padding: 16, // p-4
+    borderColor: "#e5e7eb",
+    borderRadius: 8,
+    padding: 16,
   },
   commentHeader: {
     flexDirection: "row",
-    gap: 12, // gap-3
+    gap: 12,
   },
   avatarContainer: {
-    width: 40, // w-10
-    height: 40, // h-10
-    backgroundColor: "#bfdbfe", // bg-blue-100
-    borderRadius: 9999, // rounded-full
+    width: 40,
+    height: 40,
+    backgroundColor: "#bfdbfe",
+    borderRadius: 9999,
     alignItems: "center",
     justifyContent: "center",
   },
   avatarText: {
-    color: "#2563eb", // text-blue-600
-    fontWeight: "500", // font-medium
+    color: "#2563eb",
+    fontWeight: "500",
     fontSize: 14,
   },
   commentContent: {
@@ -447,28 +471,25 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 4, // mb-1
+    marginBottom: 8,
   },
   commentAuthor: {
-    fontWeight: "500", // font-medium
-    color: "#1f2937", // text-gray-900
+    fontWeight: "500",
+    color: "#1f2937",
   },
-  deleteButton: {
-    // text-red-600 hover:text-red-800 text-sm
-  },
+  deleteButton: {},
   deleteButtonText: {
     color: "#ef4444",
     fontSize: 14,
   },
   commentText: {
-    color: "#374151", // text-gray-700
-    marginBottom: 8, // mb-2
+    color: "#374151",
   },
   commentFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
-    fontSize: 14, // text-sm
-    color: "#6b7280", // text-gray-500
+    fontSize: 14,
+    color: "#6b7280",
   },
   commentTimestamp: {
     fontSize: 14,
@@ -476,52 +497,52 @@ const styles = StyleSheet.create({
   },
   commentActions: {
     flexDirection: "row",
-    gap: 12, // gap-3
+    gap: 12,
   },
   toggleAnswersButton: {
     flexDirection: "row",
-    gap: 4, // gap-1
+    gap: 4,
     alignItems: "center",
   },
   toggleAnswersText: {
-    color: "#2563eb", // text-blue-600
+    color: "#2563eb",
   },
   answersContainer: {
-    marginTop: 12, // mt-3
-    gap: 8, // space-y-2
+    marginTop: 12,
+    gap: 8,
     borderLeftWidth: 1,
-    borderLeftColor: "#e5e7eb", // border-l pl-4
+    borderLeftColor: "#e5e7eb",
     paddingLeft: 16,
   },
   answerCard: {
-    backgroundColor: "#f9fafb", // bg-gray-50
-    padding: 12, // p-3
-    borderRadius: 8, // rounded
+    backgroundColor: "#f9fafb",
+    padding: 12,
+    borderRadius: 8,
   },
   answerAuthor: {
-    fontWeight: "500", // font-medium
-    color: "#1f2937", // text-gray-900
+    fontWeight: "500",
+    color: "#1f2937",
   },
   answerContent: {
-    fontSize: 14, // text-sm
-    color: "#4b5563", // text-gray-600
+    fontSize: 14,
+    color: "#4b5563",
   },
   answerTimestamp: {
-    fontSize: 12, // text-xs
-    color: "#9ca3af", // text-gray-400
+    fontSize: 12,
+    color: "#9ca3af",
   },
   noCommentsContainer: {
-    alignItems: "center", // text-center
-    paddingVertical: 24, // py-6
-    color: "#6b7280", // text-gray-500
+    alignItems: "center",
+    paddingVertical: 24,
+    color: "#6b7280",
   },
   noCommentsIcon: {
-    marginBottom: 8, // mb-2
+    marginBottom: 8,
     opacity: 0.5,
   },
   noCommentsText: {
     color: "#6b7280",
   },
-})
+});
 
-export default QASection
+export default QASection;

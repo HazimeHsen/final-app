@@ -54,6 +54,14 @@ const LevelExam = () => {
           return;
         }
 
+
+        if (levelId === 4) {
+          console.log("MOCK completion for level 1 or 2, setting examId to 3");
+          setExamId(6);
+          setLoading(false);
+          return;
+        }
+
         if (!isComplete) {
           setError(
             "You must complete all courses in this level to unlock the exam."

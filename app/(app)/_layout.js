@@ -1,18 +1,20 @@
-import { Tabs } from "expo-router";
-import { LogOut, User, Settings } from "lucide-react-native";
-import { TouchableOpacity, Text, StyleSheet } from "react-native";
-import { useContext } from "react";
-import { AuthContext } from "../../contexts/AuthContext";
-import { useRouter } from "expo-router";
+"use client"
+
+import { Tabs } from "expo-router"
+import { LogOut, User, Settings, Layers, Award } from "lucide-react-native" // Added Award icon
+import { TouchableOpacity, StyleSheet } from "react-native"
+import { useContext } from "react"
+import { AuthContext } from "../../contexts/AuthContext"
+import { useRouter } from "expo-router"
 
 export default function AppLayout() {
-  const { logout } = useContext(AuthContext);
-  const router = useRouter();
+  const { logout } = useContext(AuthContext)
+  const router = useRouter()
 
   const handleLogout = async () => {
-    await logout();
-    router.replace("/");
-  };
+    await logout()
+    router.replace("/")
+  }
 
   return (
     <Tabs
@@ -28,36 +30,26 @@ export default function AppLayout() {
       }}
     >
       <Tabs.Screen
-        name="student/dashboard"
+        name="student"
         options={{
           title: "Levels",
-          tabBarIcon: ({ color }) => <LogOut size={24} color={color} />,
+          tabBarIcon: ({ color }) => <Layers size={24} color={color} />,
           headerRight: () => (
-            <TouchableOpacity
-              onPress={handleLogout}
-              style={styles.logoutButton}
-            >
+            <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
               <LogOut size={20} color="#ef4444" />
             </TouchableOpacity>
           ),
         }}
       />
       <Tabs.Screen
-        name="profile"
+        name="certificates/index"
         options={{
-          title: "Profile",
-          tabBarIcon: ({ color }) => <User size={24} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          title: "Settings",
-          tabBarIcon: ({ color }) => <Settings size={24} color={color} />,
+          title: "Certificates",
+          tabBarIcon: ({ color }) => <Award size={24} color={color} />,
         }}
       />
     </Tabs>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -96,4 +88,4 @@ const styles = StyleSheet.create({
     color: "#ef4444",
     fontWeight: "600",
   },
-});
+})
