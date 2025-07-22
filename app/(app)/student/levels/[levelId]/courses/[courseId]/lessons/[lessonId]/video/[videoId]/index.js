@@ -182,7 +182,7 @@ const LessonsPage = () => {
   }, [lessonId, videoId, courseId, levelId]);
 
   const videoUri = currentLesson?.videoUrl
-    ? new URL(currentLesson.videoUrl, "http://192.168.0.110:8001").href
+    ? new URL(currentLesson.videoUrl, "http://192.168.0.110:8000").href
     : null;
   console.log(videoUri);
 
