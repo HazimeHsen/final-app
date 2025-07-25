@@ -1,121 +1,141 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useContext } from "react"
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Alert, ScrollView } from "react-native"
-import { Link } from "expo-router"
-import { LinearGradient } from "expo-linear-gradient"
-import { Lock, CheckCircle, ArrowRight } from "lucide-react-native"
-import * as WebBrowser from "expo-web-browser"
+import { useState, useEffect, useContext } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  TouchableOpacity,
+  Alert,
+  ScrollView,
+} from "react-native";
+import { Link } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
+import { Lock, CheckCircle, ArrowRight } from "lucide-react-native";
+import * as WebBrowser from "expo-web-browser";
 
-import { levelAPI, videoAPI, examAPI, userAPI, paymentAPI } from "../../../../api"
-import { AuthContext } from "../../../../contexts/AuthContext"
+import {
+  levelAPI,
+  videoAPI,
+  examAPI,
+  userAPI,
+  paymentAPI,
+} from "../../../../api";
+import { AuthContext } from "../../../../contexts/AuthContext";
 
 const LevelsStudent = () => {
-  const { user } = useContext(AuthContext)
-  const [levels, setLevels] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [levelProgress, setLevelProgress] = useState({})
-  const [levelExams, setLevelExams] = useState({})
-  const [levelExamResults, setLevelExamResults] = useState({})
-  const [purchasedLevels, setPurchasedLevels] = useState([])
+  const { user } = useContext(AuthContext);
+  const [levels, setLevels] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [levelProgress, setLevelProgress] = useState({});
+  const [levelExams, setLevelExams] = useState({});
+  const [levelExamResults, setLevelExamResults] = useState({});
+  const [purchasedLevels, setPurchasedLevels] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoading(true)
-        const levelsRes = await levelAPI.getAll()
-        setLevels(levelsRes.data)
+        setLoading(true);
+        const levelsRes = await levelAPI.getAll();
+        setLevels(levelsRes.data);
 
         if (user?.id) {
           try {
-            const purchasedRes = await userAPI.getPurchasedLevels(user.id)
-            console.log("Purchased levels response:", purchasedRes)
+            const purchasedRes = await userAPI.getPurchasedLevels(user.id);
+            console.log("Purchased levels response:", purchasedRes);
             if (purchasedRes.data?.success) {
-              const purchasedLevelIds = purchasedRes.data.data.map((p) => p.level_id)
-              setPurchasedLevels(purchasedLevelIds)
-              console.log("Purchased level IDs:", purchasedLevelIds)
+              const purchasedLevelIds = purchasedRes.data.data.map(
+                (p) => p.level_id
+              );
+              setPurchasedLevels(purchasedLevelIds);
+              console.log("Purchased level IDs:", purchasedLevelIds);
             }
           } catch (err) {
-            console.error("Failed to fetch purchased levels:", err)
+            console.error("Failed to fetch purchased levels:", err);
           }
         }
 
-        const progressData = {}
-        const examsData = {}
-        const resultsData = {}
+        const progressData = {};
+        const examsData = {};
+        const resultsData = {};
 
         await Promise.all(
           levelsRes.data.map(async (level) => {
-            const progressRes = await videoAPI.getLevelProgress(level.id)
-            progressData[level.id] = progressRes.data
+            const progressRes = await videoAPI.getLevelProgress(level.id);
+            progressData[level.id] = progressRes.data;
 
-            let exam = null
-            if (level.id === 1 || level.id === 2) {
-              exam = { id: 3 }
-            } else {
-              try {
-                const examRes = await examAPI.getExamByLevel(level.id)
-                exam = Array.isArray(examRes?.data) ? examRes.data[0] : examRes.data
-              } catch (err) {
-                console.warn(`No exam found for level ${level.id}:`, err)
-              }
+            let exam = null;
+
+            try {
+              const examRes = await examAPI.getExamByLevel(level.id);
+              exam = Array.isArray(examRes?.data)
+                ? examRes.data[0]
+                : examRes.data;
+            } catch (err) {
+              console.warn(`No exam found for level ${level.id}:`, err);
             }
 
             if (exam?.id) {
-              examsData[level.id] = exam
+              examsData[level.id] = exam;
               try {
-                const resultRes = await examAPI.gradeStudent(exam.id, user?.id)
-                resultsData[level.id] = resultRes?.data || null
+                const resultRes = await examAPI.gradeStudent(exam.id, user?.id);
+                console.log({ level: level.id, resultRes: resultRes.data });
+
+                resultsData[level.id] = resultRes?.data || null;
               } catch (err) {
-                resultsData[level.id] = null
+                resultsData[level.id] = null;
               }
             }
-          }),
-        )
-        setLevelProgress(progressData)
-        setLevelExams(examsData)
-        setLevelExamResults(resultsData)
+          })
+        );
+        setLevelProgress(progressData);
+        setLevelExams(examsData);
+        setLevelExamResults(resultsData);
       } catch (error) {
-        console.error("Failed to fetch data:", error)
+        console.error("Failed to fetch data:", error);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchData()
-  }, [user?.id])
+    fetchData();
+  }, [user?.id]);
 
   const isLevelUnlockedSequentially = (level) => {
-    if (level.id === 1) return true
-    if (user?.id === 49) return true
-    const prevLevelId = level.id - 1
-    const prevLevelProgress = levelProgress[prevLevelId]
-    const prevLevelExam = levelExams[prevLevelId]
-    const prevLevelExamResult = levelExamResults[prevLevelId]
+    if (level.id === 1) return true;
+    if (user?.id === 49) return true;
+    const prevLevelId = level.id - 1;
+    const prevLevelProgress = levelProgress[prevLevelId];
+    const prevLevelExam = levelExams[prevLevelId];
+    const prevLevelExamResult = levelExamResults[prevLevelId];
 
-    if (!prevLevelProgress?.is_complete) return false
-    if (!prevLevelExam) return true
-    return prevLevelExamResult?.score > 50
-  }
+    if (!prevLevelProgress?.is_complete) return false;
+    if (!prevLevelExam) return true;
+    return prevLevelExamResult?.score > 50;
+  };
 
   const handlePay = async (levelId) => {
     if (!user) {
-      Alert.alert("Login Required", "Please log in to purchase this level.")
-      return
+      Alert.alert("Login Required", "Please log in to purchase this level.");
+      return;
     }
     try {
-      const res = await paymentAPI.pay(levelId)
-      console.log({ res })
+      const res = await paymentAPI.pay(levelId);
+      console.log({ res });
       if (res.data?.url) {
-        WebBrowser.openBrowserAsync(res.data.url)
+        WebBrowser.openBrowserAsync(res.data.url);
       } else {
-        throw new Error("No redirect URL received")
+        throw new Error("No redirect URL received");
       }
     } catch (error) {
-      console.error("Payment initiation failed:", error)
-      Alert.alert("Payment Failed", "Failed to initiate payment. Please try again.")
+      console.error("Payment initiation failed:", error);
+      Alert.alert(
+        "Payment Failed",
+        "Failed to initiate payment. Please try again."
+      );
     }
-  }
+  };
 
   if (loading) {
     return (
@@ -123,7 +143,7 @@ const LevelsStudent = () => {
         <ActivityIndicator size="large" color="#8b5cf6" />
         <Text style={styles.loadingText}>Loading levels...</Text>
       </View>
-    )
+    );
   }
 
   return (
@@ -138,32 +158,45 @@ const LevelsStudent = () => {
 
         <View style={styles.levelsGrid}>
           {levels.map((level) => {
-            const isEligible = isLevelUnlockedSequentially(level)
-            const hasPrice = level.price > 0
-            const hasPurchased = purchasedLevels.includes(level.id)
+            const isEligible = isLevelUnlockedSequentially(level);
+            const hasPrice = level.price > 0;
+            const hasPurchased = purchasedLevels.includes(level.id);
             const progress = levelProgress[level.id] || {
               total_courses: 0,
               completed_courses: 0,
               is_complete: false,
-            }
-            const hasExam = Boolean(levelExams[level.id])
-            const examResult = levelExamResults[level.id]
+            };
+            const hasExam = Boolean(levelExams[level.id]);
+
+            const examResult = levelExamResults[level.id];
             const progressPercentage =
-              progress.total_courses > 0 ? Math.round((progress.completed_courses / progress.total_courses) * 100) : 0
-            const showCompletedBadge = progress.is_complete && (!hasExam || examResult?.score > 50)
-            const showPayButton = isEligible && hasPrice && !hasPurchased
-            const isAccessible = isEligible && (!hasPrice || hasPurchased)
+              progress.total_courses > 0
+                ? Math.round(
+                    (progress.completed_courses / progress.total_courses) * 100
+                  )
+                : 0;
+            const showCompletedBadge =
+              progress.is_complete && (!hasExam || examResult?.score > 50);
+            const showPayButton = isEligible && hasPrice && !hasPurchased;
+            const isAccessible = isEligible && (!hasPrice || hasPurchased);
 
             return (
               <View
                 key={level.id}
-                style={[styles.levelCard, !isEligible ? styles.levelCardLocked : styles.levelCardUnlocked]}
+                style={[
+                  styles.levelCard,
+                  !isEligible
+                    ? styles.levelCardLocked
+                    : styles.levelCardUnlocked,
+                ]}
               >
                 {!isEligible && (
                   <View style={styles.lockedOverlay}>
                     <View style={styles.lockedContent}>
                       <Lock size={48} color="#9ca3af" />
-                      <Text style={styles.lockedText}>Complete the previous level to unlock</Text>
+                      <Text style={styles.lockedText}>
+                        Complete the previous level to unlock
+                      </Text>
                     </View>
                   </View>
                 )}
@@ -194,7 +227,10 @@ const LevelsStudent = () => {
                       colors={["#8b5cf6", "#ec4899"]}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 0 }}
-                      style={[styles.progressBarFill, { width: `${progressPercentage}%` }]}
+                      style={[
+                        styles.progressBarFill,
+                        { width: `${progressPercentage}%` },
+                      ]}
                     />
                   </View>
                 </View>
@@ -205,23 +241,40 @@ const LevelsStudent = () => {
                     <Text style={styles.buttonLockedText}>Locked</Text>
                   </TouchableOpacity>
                 ) : showPayButton ? (
-                  <TouchableOpacity onPress={() => handlePay(level.id)} style={styles.buttonPay}>
-                    <Text style={styles.buttonPayText}>Pay to Unlock - ${level.price}</Text>
-                    <ArrowRight size={16} color="white" style={styles.buttonIcon} />
+                  <TouchableOpacity
+                    onPress={() => handlePay(level.id)}
+                    style={styles.buttonPay}
+                  >
+                    <Text style={styles.buttonPayText}>
+                      Pay to Unlock - ${level.price}
+                    </Text>
+                    <ArrowRight
+                      size={16}
+                      color="white"
+                      style={styles.buttonIcon}
+                    />
                   </TouchableOpacity>
                 ) : progress.is_complete && hasExam ? (
                   examResult?.score > 0 ? (
                     <View style={styles.buttonExamCompleted}>
                       <CheckCircle size={16} color="#9ca3af" />
-                      <Text style={styles.buttonExamCompletedText}>Exam completed</Text>
+                      <Text style={styles.buttonExamCompletedText}>
+                        Exam completed
+                      </Text>
                     </View>
                   ) : (
                     <Link href={`/student/levels/${level.id}/exam`} asChild>
                       <TouchableOpacity style={styles.buttonPrimary}>
                         <Text style={styles.buttonPrimaryText}>
-                          {examResult?.score === 0 ? "Retake Exam" : "Take Exam"}
+                          {examResult?.score === 0
+                            ? "Retake Exam"
+                            : "Take Exam"}
                         </Text>
-                        <ArrowRight size={16} color="white" style={styles.buttonIcon} />
+                        <ArrowRight
+                          size={16}
+                          color="white"
+                          style={styles.buttonIcon}
+                        />
                       </TouchableOpacity>
                     </Link>
                   )
@@ -232,21 +285,25 @@ const LevelsStudent = () => {
                         {progress.total_courses === 0
                           ? "Explore Level"
                           : progress.is_complete
-                            ? "Review Level"
-                            : "Continue Learning"}
+                          ? "Review Level"
+                          : "Continue Learning"}
                       </Text>
-                      <ArrowRight size={16} color="white" style={styles.buttonIcon} />
+                      <ArrowRight
+                        size={16}
+                        color="white"
+                        style={styles.buttonIcon}
+                      />
                     </TouchableOpacity>
                   </Link>
                 )}
               </View>
-            )
+            );
           })}
         </View>
       </ScrollView>
     </LinearGradient>
-  )
-}
+  );
+};
 
 // Define common button styles outside of StyleSheet.create
 const commonButtonStyles = {
@@ -257,12 +314,12 @@ const commonButtonStyles = {
   justifyContent: "center",
   alignItems: "center",
   flexDirection: "row",
-}
+};
 
 const commonButtonTextStyles = {
   fontSize: 16,
   fontWeight: "600",
-}
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -460,6 +517,6 @@ const styles = StyleSheet.create({
     ...commonButtonTextStyles,
     color: "#6b7280", // gray-500
   },
-})
+});
 
-export default LevelsStudent
+export default LevelsStudent;

@@ -55,9 +55,9 @@ const LevelExam = () => {
         }
 
 
-        if (levelId === 4) {
+        if (levelId === 5) {
           console.log("MOCK completion for level 1 or 2, setting examId to 3");
-          setExamId(6);
+          setExamId(7);
           setLoading(false);
           return;
         }

@@ -9,10 +9,11 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
+  Platform,
 } from "react-native";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import { VideoView, useVideoPlayer } from "expo-video";
-import { useEvent } from "expo";
+import { useEvent, useEventListener } from "expo";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Play, MessageCircle, Star, ArrowLeft } from "lucide-react-native";
 import QASection from "../../../../../../../../../../../components/common/QASection";
@@ -184,17 +185,13 @@ const LessonsPage = () => {
   const videoUri = currentLesson?.videoUrl
     ? new URL(currentLesson.videoUrl, "http://192.168.0.110:8000").href
     : null;
-  console.log(videoUri);
 
-  const player = useVideoPlayer(videoUri, (player) => {
-    autoPlay: true;
-    muted: false;
-  });
+  const player = useVideoPlayer(videoUri);
+  console.log(player.status);
 
-  useEvent(player, "ended", () => {
+  useEventListener(player, "playToEnd", () => {
     handleVideoEnd();
   });
-
   const tabs = [
     { id: "qa", label: "Q&A", icon: MessageCircle },
     { id: "reviews", label: "Reviews", icon: Star },
@@ -250,7 +247,6 @@ const LessonsPage = () => {
                 <Text style={styles.chapterSubtitle}>
                   Chapter {chapter.chapterNumber} • {course.title}
                 </Text>
-                <Link href={"/student/levels/4/exam"}>videoUri</Link>
               </View>
             </View>
           </View>

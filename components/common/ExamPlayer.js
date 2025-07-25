@@ -14,7 +14,7 @@ import {
   Platform,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { Video } from "expo-video"; // Changed from expo-av
+import { useVideoPlayer, Video, VideoView } from "expo-video"; // Changed from expo-av
 import * as ImagePicker from "expo-image-picker"; // For image uploads
 import * as WebBrowser from "expo-web-browser"; // For opening external links
 import { useRouter } from "expo-router"; // For navigation
@@ -34,8 +34,7 @@ import {
 import { examAPI, certificateAPI } from "../../api"; // Adjusted path
 import { AuthContext } from "../../contexts/AuthContext";
 
-const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL || "http://127.0.0.1:8000/";
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
 const ExamPlayer = ({ examId, showCertificate }) => {
   const router = useRouter();
@@ -56,7 +55,21 @@ const ExamPlayer = ({ examId, showCertificate }) => {
   const [levelId, setLevelId] = useState(null);
   const [hasPreviousSubmission, setHasPreviousSubmission] = useState(false);
   const [hasCertificate, setHasCertificate] = useState(false);
-console.log(examQuestions);
+  console.log(examQuestions);
+
+  const currentQuestion = examQuestions[currentQuestionIndex];
+
+  const player = useVideoPlayer(
+    currentQuestion?.type === "video" && currentQuestion?.media
+      ? { uri: `${API_BASE_URL}${currentQuestion.media}` }
+      : null,
+    (p) => {
+      if (p) {
+        p.loop = true;
+        p.play();
+      }
+    }
+  );
 
   const checkExistingSubmission = async () => {
     try {
@@ -126,7 +139,7 @@ console.log(examQuestions);
       const formattedQuestions = response.data.questions.map((question) => ({
         id: question.id,
         question: question.question_text,
-        type: question.question_media_type, // Use question_media_type for rendering
+        type: question.question_type, // Use question_media_type for rendering
         media: question.question_media_url,
         options:
           question.answer_type === "multiple_choice"
@@ -369,7 +382,7 @@ console.log(examQuestions);
   };
 
   const renderMedia = (question) => {
-    if (!question.media) return null;
+    if (!question?.media) return null;
 
     const mediaUrl = `${API_BASE_URL}${question.media}`;
 
@@ -378,7 +391,7 @@ console.log(examQuestions);
         return (
           <View style={styles.mediaContainer}>
             <Image
-              source={{ uri:"http://192.168.0.110:8001" + mediaUrl }}
+              source={{ uri: mediaUrl }}
               style={styles.mediaImage}
               resizeMode="contain"
             />
@@ -387,14 +400,14 @@ console.log(examQuestions);
       case "video":
         return (
           <View style={styles.mediaContainer}>
-            <Video
-              source={{ uri: mediaUrl }}
-              style={styles.mediaVideo}
-              useNativeControls
-              resizeMode="contain"
-              // isLooping // This prop is for expo-av
-              loop // This prop is for expo-video
-            />
+            {player && (
+              <VideoView
+                style={styles.mediaVideo}
+                player={player}
+                nativeControls
+                resizeMode="contain"
+              />
+            )}
           </View>
         );
       default:
@@ -667,7 +680,6 @@ console.log(examQuestions);
                   currentQuestionIndex === 0 && styles.navButtonDisabled,
                 ]}
               >
-             
                 <Text
                   style={[
                     styles.navButtonText,
@@ -684,7 +696,6 @@ console.log(examQuestions);
                   disabled={isUploading}
                   style={styles.submitExamButton}
                 >
-                 
                   <Text style={styles.submitExamButtonText}>
                     {isUploading ? "Processing..." : "Submit Exam"}
                   </Text>

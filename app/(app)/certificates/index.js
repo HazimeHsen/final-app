@@ -35,7 +35,7 @@ const Certificate = () => {
       }
       // Fetch all certificate data using the API instance
       const response = await certificateAPI.getAllForUser(user.id)
-      
+
       if (response.data) {
         setAllCertificates(response.data)
       } else {
@@ -128,65 +128,65 @@ const Certificate = () => {
             </Link>
           </View>
         ) : (
-          <View style={styles.tableContainer}>
-            <View style={styles.tableHeader}>
-              <Text style={[styles.tableHeaderText, styles.columnId]}>ID</Text>
-              <Text style={[styles.tableHeaderText, styles.columnLevel]}>Level ID</Text>
-              <Text style={[styles.tableHeaderText, styles.columnPath]}>Certificate Path</Text>
-              <Text style={[styles.tableHeaderText, styles.columnDate]}>Issued At</Text>
-              <Text style={[styles.tableHeaderText, styles.columnActions]}>Actions</Text>
-            </View>
-            {allCertificates.map((certificate) => (
-              <View key={certificate.id} style={styles.tableRow}>
-                <Text style={[styles.tableCell, styles.columnId]}>{certificate.id}</Text>
-                <Text style={[styles.tableCell, styles.columnLevel]}>{certificate.level_id}</Text>
-                <TouchableOpacity
-                  onPress={() => {
-                    const url = `http://192.168.0.110:8000${certificate.certificate_url}`
-                    console.log(url);
-                    
-                    setModalCertificateUrl(url)
-                  }}
-                  style={[styles.tableCell, styles.columnPath]}
-                >
-                  <Text style={styles.viewLink}>View</Text>
-                </TouchableOpacity>
-                <Text style={[styles.tableCell, styles.columnDate]}>
-                  {certificate.issued_at ? new Date(certificate.issued_at).toLocaleDateString() : "—"}
-                </Text>
-                <View style={[styles.tableCell, styles.columnActions, styles.actionsCell]}>
-                  <TouchableOpacity
-                    onPress={() => {
-                      if (certificate.certificate_url) {
-                        const filename = certificate.certificate_url
-                        handleDownload(filename)
-                      } else {
-                        Alert.alert("Error", "Certificate file not available.")
-                      }
-                    }}
-                    style={styles.actionButton}
-                  >
-                    <Download size={16} color="white" />
-                    <Text style={styles.actionButtonText}>Download</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => {
-                      if (certificate.certificate_url) {
-                        const filename = certificate.certificate_url
-                        handleShare(certificate.id, filename)
-                      } else {
-                        Alert.alert("Error", "Certificate file not available.")
-                      }
-                    }}
-                    style={[styles.actionButton, styles.shareButton]}
-                  >
-                    <Share2 size={16} color="white" />
-                    <Text style={styles.actionButtonText}>Share</Text>
-                  </TouchableOpacity>
-                </View>
+          <ScrollView horizontal={true} showsHorizontalScrollIndicator={true}>
+            <View style={styles.tableContainer}>
+              <View style={styles.tableHeader}>
+                <Text style={[styles.tableHeaderText, styles.columnLevel]}>Level ID</Text>
+                <Text style={[styles.tableHeaderText, styles.columnPath]}>Certificate Path</Text>
+                <Text style={[styles.tableHeaderText, styles.columnDate]}>Issued At</Text>
+                <Text style={[styles.tableHeaderText, styles.columnActions]}>Actions</Text>
               </View>
-            ))}
-          </View>
+              {allCertificates.map((certificate) => (
+                <View key={certificate.id} style={styles.tableRow}>
+                  <Text style={[styles.tableCell, styles.columnLevel]}>{certificate.level_id}</Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      const url = `http://192.168.0.110:8000${certificate.certificate_url}`
+                      console.log(url)
+
+                      setModalCertificateUrl(url)
+                    }}
+                    style={[styles.tableCell, styles.columnPath]}
+                  >
+                    <Text style={styles.viewLink}>View</Text>
+                  </TouchableOpacity>
+                  <Text style={[styles.tableCell, styles.columnDate]}>
+                    {certificate.issued_at ? new Date(certificate.issued_at).toLocaleDateString() : "—"}
+                  </Text>
+                  <View style={[styles.tableCell, styles.columnActions, styles.actionsCell]}>
+                    <TouchableOpacity
+                      onPress={() => {
+                        if (certificate.certificate_url) {
+                          const filename = certificate.certificate_url
+                          handleDownload(filename)
+                        } else {
+                          Alert.alert("Error", "Certificate file not available.")
+                        }
+                      }}
+                      style={styles.actionButton}
+                    >
+                      <Download size={16} color="white" />
+                      <Text style={styles.actionButtonText}>Download</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => {
+                        if (certificate.certificate_url) {
+                          const filename = certificate.certificate_url
+                          handleShare(certificate.id, filename)
+                        } else {
+                          Alert.alert("Error", "Certificate file not available.")
+                        }
+                      }}
+                      style={[styles.actionButton, styles.shareButton]}
+                    >
+                      <Share2 size={16} color="white" />
+                      <Text style={styles.actionButtonText}>Share</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </ScrollView>
         )}
 
         {/* Modal for viewing PDF */}
@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingVertical: 32,
     paddingHorizontal: 16,
-    maxWidth: 960, // max-w-4xl
+    maxWidth: 1024, // max-w-5xl for wider table
     alignSelf: "center",
   },
   loadingContainer: {
@@ -276,7 +276,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   tryAgainButton: {
-    backgroundColor: "#2563eb",
+    backgroundColor: "#6d28d9", // Deeper purple
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 12,
@@ -315,41 +315,41 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 34, // Larger title
     fontWeight: "bold",
     color: "#1f2937",
     marginBottom: 8,
     textAlign: "center",
   },
   headerSubtitle: {
-    fontSize: 16,
+    fontSize: 18, // Slightly larger subtitle
     color: "#4b5563",
     textAlign: "center",
-    maxWidth: 600,
+    maxWidth: 700,
   },
 
   noCertificatesContainer: {
     alignItems: "center",
-    paddingVertical: 48,
+    paddingVertical: 64, // More padding
     backgroundColor: "white",
     borderRadius: 16,
     borderWidth: 1,
     borderColor: "#e5e7eb",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 8 }, // More pronounced shadow
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 8,
     marginHorizontal: 16,
   },
   noCertificatesIcon: {
-    marginBottom: 16,
-    opacity: 0.6,
+    marginBottom: 24, // More space
+    opacity: 0.7,
   },
   noCertificatesText: {
-    fontSize: 18,
+    fontSize: 20, // Larger text
     color: "#6b7280",
-    marginBottom: 24,
+    marginBottom: 32, // More space
     textAlign: "center",
   },
 
@@ -357,42 +357,45 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     borderRadius: 16,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 5,
-    overflow: "hidden", // Ensures rounded corners
+    shadowOffset: { width: 0, height: 8 }, // More pronounced shadow
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 8,
+    overflow: "hidden",
     borderWidth: 1,
     borderColor: "#e5e7eb",
   },
   tableHeader: {
     flexDirection: "row",
-    backgroundColor: "#1f2937", // bg-gray-800
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    backgroundColor: "#4c1d95", // Deeper purple for header
+    paddingVertical: 16, // More padding
+    paddingHorizontal: 20, // More padding
     borderBottomWidth: 1,
-    borderBottomColor: "#374151",
+    borderBottomColor: "#6b21a8",
+    minWidth: 800, // Added minWidth for horizontal scrolling
   },
   tableHeaderText: {
     color: "white",
-    fontWeight: "600",
-    fontSize: 12,
+    fontWeight: "700", // Bolder
+    fontSize: 13, // Slightly larger font
     textTransform: "uppercase",
-    letterSpacing: 0.5,
+    letterSpacing: 0.8, // More spacing
   },
   tableRow: {
     flexDirection: "row",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: 16, // More padding
+    paddingHorizontal: 20, // More padding
     borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
+    borderBottomColor: "#f3f4f6", // Lighter border for rows
     alignItems: "center",
+    backgroundColor: "white", // Explicitly white background
+    minWidth: 800, // Added minWidth for horizontal scrolling
   },
   tableRowLast: {
     borderBottomWidth: 0,
   },
   tableCell: {
-    fontSize: 14,
+    fontSize: 15, // Slightly larger font
     color: "#374151",
     flexShrink: 1,
   },
@@ -412,74 +415,82 @@ const styles = StyleSheet.create({
     width: "30%",
   },
   viewLink: {
-    color: "#2563eb",
+    color: "#6d28d9", // Purple link
     textDecorationLine: "underline",
+    fontWeight: "600",
   },
   actionsCell: {
     flexDirection: "row",
-    gap: 8,
+    gap: 10, // More space between buttons
     flexWrap: "wrap",
   },
   actionButton: {
-    backgroundColor: "#2563eb", // bg-blue-500
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
+    backgroundColor: "#8b5cf6", // Purple button
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 10, // More rounded
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: 6, // More space between icon and text
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 3,
   },
   shareButton: {
-    backgroundColor: "#10b981", // bg-green-500
+    backgroundColor: "#10b981", // Green button
   },
   actionButtonText: {
     color: "white",
     fontWeight: "bold",
-    fontSize: 12,
+    fontSize: 13, // Slightly larger font
   },
 
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0,0,0,0.6)", // Darker overlay
     justifyContent: "center",
     alignItems: "center",
   },
   modalContent: {
     backgroundColor: "white",
-    borderRadius: 16,
-    padding: 24,
+    borderRadius: 20, // More rounded corners
+    padding: 32, // More padding
     width: "90%",
-    maxWidth: 500,
+    maxWidth: 550,
     alignItems: "center",
     position: "relative",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 15,
+    elevation: 15,
   },
   modalCloseButton: {
     position: "absolute",
-    top: 12,
-    right: 12,
+    top: 16,
+    right: 16,
     padding: 8,
+    backgroundColor: "#f3f4f6", // Light background for close button
+    borderRadius: 999, // Circular
   },
   modalTitle: {
-    fontSize: 24,
+    fontSize: 28, // Larger title
     fontWeight: "bold",
-    marginBottom: 8,
+    marginBottom: 12,
     color: "#1f2937",
   },
   modalSubtitle: {
-    fontSize: 16,
+    fontSize: 17,
     color: "#4b5563",
-    marginBottom: 24,
+    marginBottom: 28, // More space
     textAlign: "center",
   },
   openInBrowserButton: {
     backgroundColor: "#8b5cf6",
-    paddingVertical: 12,
-    paddingHorizontal: 24,
+    paddingVertical: 14, // Larger button
+    paddingHorizontal: 28,
     borderRadius: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
@@ -489,7 +500,7 @@ const styles = StyleSheet.create({
   },
   openInBrowserButtonText: {
     color: "white",
-    fontSize: 16,
+    fontSize: 17, // Larger text
     fontWeight: "600",
   },
 })
