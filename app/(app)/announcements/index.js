@@ -24,8 +24,8 @@ import {
   Clock,
 } from "lucide-react-native";
 
-import { announcementAPI } from "../../api";
-import { AuthContext } from "../../contexts/AuthContext";
+import { announcementAPI } from "../../../api";
+import { AuthContext } from "../../../contexts/AuthContext";
 
 const AnnouncementsStudent = () => {
   const { user, loading: authLoading } = useContext(AuthContext);
