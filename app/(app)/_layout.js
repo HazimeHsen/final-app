@@ -1,7 +1,7 @@
 "use client"
 
 import { Tabs } from "expo-router"
-import { LogOut, User, Settings, Layers, Award } from "lucide-react-native" // Added Award icon
+import { LogOut, Layers, Award, Megaphone } from "lucide-react-native" // Added Megaphone icon
 import { TouchableOpacity, StyleSheet } from "react-native"
 import { useContext } from "react"
 import { AuthContext } from "../../contexts/AuthContext"
@@ -46,6 +46,13 @@ export default function AppLayout() {
         options={{
           title: "Certificates",
           tabBarIcon: ({ color }) => <Award size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="announcements/index"
+        options={{
+          title: "Announcements",
+          tabBarIcon: ({ color }) => <Megaphone size={24} color={color} />,
         }}
       />
     </Tabs>
