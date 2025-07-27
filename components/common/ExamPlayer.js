@@ -14,10 +14,10 @@ import {
   Platform,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { useVideoPlayer, Video, VideoView } from "expo-video"; // Changed from expo-av
-import * as ImagePicker from "expo-image-picker"; // For image uploads
-import * as WebBrowser from "expo-web-browser"; // For opening external links
-import { useRouter } from "expo-router"; // For navigation
+import { useVideoPlayer, VideoView } from "expo-video";
+import * as ImagePicker from "expo-image-picker";
+import * as WebBrowser from "expo-web-browser";
+import { useRouter } from "expo-router";
 
 import {
   Clock,
@@ -29,9 +29,10 @@ import {
   Target,
   Users,
   AlertCircle,
+  Image as ImageIcon,
 } from "lucide-react-native";
 
-import { examAPI, certificateAPI } from "../../api"; // Adjusted path
+import { examAPI, certificateAPI } from "../../api";
 import { AuthContext } from "../../contexts/AuthContext";
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
@@ -41,9 +42,9 @@ const ExamPlayer = ({ examId, showCertificate }) => {
   const { user } = useContext(AuthContext);
 
   const [currentScreen, setCurrentScreen] = useState("welcome");
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0); // Renamed to avoid conflict with question object
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState({});
-  const [timeRemaining, setTimeRemaining] = useState(1800); // Default to 30 minutes
+  const [timeRemaining, setTimeRemaining] = useState(1800);
   const [examStarted, setExamStarted] = useState(false);
   const [userLevel, setUserLevel] = useState(null);
   const [score, setScore] = useState(0);
@@ -55,7 +56,6 @@ const ExamPlayer = ({ examId, showCertificate }) => {
   const [levelId, setLevelId] = useState(null);
   const [hasPreviousSubmission, setHasPreviousSubmission] = useState(false);
   const [hasCertificate, setHasCertificate] = useState(false);
-  console.log(examQuestions);
 
   const currentQuestion = examQuestions[currentQuestionIndex];
 
@@ -74,10 +74,9 @@ const ExamPlayer = ({ examId, showCertificate }) => {
   const checkExistingSubmission = async () => {
     try {
       const result = await examAPI.gradeStudent(examId, user.id);
-      console.log("Existing submission check result:", result.data);
       if (result.data) {
         setHasPreviousSubmission(true);
-        setScore(result.data.score);
+        setScore(Number(result.data.score));
         setLevelId(result.data.level_id);
         return true;
       }
@@ -103,12 +102,10 @@ const ExamPlayer = ({ examId, showCertificate }) => {
 
   const deletePreviousSubmission = async () => {
     try {
-      // Delete certificate first if it exists
       if (hasCertificate && levelId && user?.id) {
         await certificateAPI.deleteCertificate(user.id, levelId);
         setHasCertificate(false);
       }
-      // Then delete the submission
       await examAPI.deleteSubmission(examId);
       setHasPreviousSubmission(false);
       return true;
@@ -128,18 +125,18 @@ const ExamPlayer = ({ examId, showCertificate }) => {
       const hasSubmission = await checkExistingSubmission();
       if (hasSubmission) {
         await checkExistingCertificate();
-        setCurrentScreen("results"); // Go directly to results if already submitted
+        setCurrentScreen("results");
         return;
       }
 
       const response = await examAPI.getById(examId);
       setExamInfo(response.data.exam);
-      setTimeRemaining(response.data.exam.duration * 60 || 1800); // Set time based on exam data
+      setTimeRemaining(response.data.exam.duration * 60 || 1800);
 
       const formattedQuestions = response.data.questions.map((question) => ({
         id: question.id,
         question: question.question_text,
-        type: question.question_type, // Use question_media_type for rendering
+        type: question.question_type,
         media: question.question_media_url,
         options:
           question.answer_type === "multiple_choice"
@@ -162,30 +159,28 @@ const ExamPlayer = ({ examId, showCertificate }) => {
     }
   };
 
-  const handleRetakeExam = async () => {
-    const success = await deletePreviousSubmission();
-    if (success) {
-      // Reset exam state and fetch questions again
-      setCurrentScreen("welcome");
-      setCurrentQuestionIndex(0);
-      setAnswers({});
-      setTimeRemaining(examInfo?.duration * 60 || 1800); // Reset to initial duration
-      setExamStarted(false);
-      setScore(0);
-      setHasPreviousSubmission(false);
-      setHasCertificate(false);
-      await fetchExamData(); // Fetch questions again after reset
-    }
-  };
-
   useEffect(() => {
     if (examId) {
       fetchExamData();
     }
-  }, [examId, user?.id]); // Added user.id to dependencies
+  }, [examId, user?.id]);
+
+  const handleRetakeExam = async () => {
+    const success = await deletePreviousSubmission();
+    if (success) {
+      setCurrentScreen("welcome");
+      setCurrentQuestionIndex(0);
+      setAnswers({});
+      setTimeRemaining(examInfo?.duration * 60 || 1800);
+      setExamStarted(false);
+      setScore(0);
+      setHasPreviousSubmission(false);
+      setHasCertificate(false);
+      await fetchExamData();
+    }
+  };
 
   const handleImageUpload = async (questionId) => {
-    // Request camera roll permissions
     if (Platform.OS !== "web") {
       const { status } =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -205,7 +200,7 @@ const ExamPlayer = ({ examId, showCertificate }) => {
       quality: 0.5,
     });
 
-    if (!result.canceled) {
+    if (!result.canceled && result.assets && result.assets.length > 0) {
       const uri = result.assets[0].uri;
       setAnswers((prev) => ({
         ...prev,
@@ -226,7 +221,7 @@ const ExamPlayer = ({ examId, showCertificate }) => {
         setTimeRemaining((time) => time - 1);
       }, 1000);
     } else if (timeRemaining === 0 && examStarted) {
-      handleSubmitExam(); // Auto-submit when time runs out
+      handleSubmitExam();
     }
     return () => clearInterval(interval);
   }, [examStarted, timeRemaining, currentScreen, examQuestions]);
@@ -293,7 +288,7 @@ const ExamPlayer = ({ examId, showCertificate }) => {
             "Upload Error",
             `Failed to upload image for a question. Please try again.`
           );
-          return { questionId: question.id, photoPath: null }; // Return null path on error
+          return { questionId: question.id, photoPath: null };
         }
       });
 
@@ -318,7 +313,6 @@ const ExamPlayer = ({ examId, showCertificate }) => {
             photo: null,
           };
         }
-        // For text_input or other types
         return {
           exam_question_id: question.id,
           answer: answers[question.id] || "",
@@ -326,19 +320,16 @@ const ExamPlayer = ({ examId, showCertificate }) => {
         };
       });
 
-      // Submit exam answers
       const res = await examAPI.submit(examId, { submissions: submissions });
       console.log("Exam submission response:", res.data);
 
-      // Grade student
       const gradingResponse = await examAPI.gradeStudent(examId, user.id);
       console.log("Grading response:", gradingResponse.data);
-      setScore(gradingResponse.data.score);
+      setScore(Number(gradingResponse.data.score));
       setUserLevel(gradingResponse.data.level);
       const levelIdFromGrade = gradingResponse.data.level_id;
       setLevelId(levelIdFromGrade);
 
-      // Only generate certificate if passed (score >= 50) and showCertificate is true
       if (
         gradingResponse.data.score >= 50 &&
         levelIdFromGrade &&
@@ -351,7 +342,7 @@ const ExamPlayer = ({ examId, showCertificate }) => {
           );
           const certUrl = certRes.data.certificate_url;
           if (certUrl) {
-            await WebBrowser.openBrowserAsync(certUrl); // Open certificate in browser
+            await WebBrowser.openBrowserAsync(certUrl);
             setHasCertificate(true);
             Alert.alert(
               "Certificate Generated",
@@ -465,12 +456,16 @@ const ExamPlayer = ({ examId, showCertificate }) => {
                   source={{ uri: answers[question.id].imagePreview }}
                   style={styles.imagePreview}
                 />
-                <Text style={styles.imageUploadTextSmall}>
-                  Tap to change image
-                </Text>
+                <TouchableOpacity
+                  style={styles.changeImageButton}
+                  onPress={() => handleImageUpload(question.id)}
+                >
+                  <Text style={styles.changeImageButtonText}>Change Image</Text>
+                </TouchableOpacity>
               </View>
             ) : (
               <View style={styles.imageUploadPlaceholder}>
+                <ImageIcon size={32} color="#6b7280" />
                 <Text style={styles.imageUploadText}>
                   Tap to upload an image
                 </Text>
@@ -724,15 +719,15 @@ const ExamPlayer = ({ examId, showCertificate }) => {
     const getLevelColor = (level) => {
       switch (level) {
         case "Advanced":
-          return ["#10b981", "#059669"]; // green-600 to emerald-500
+          return ["#10b981", "#059669"];
         case "Intermediate":
-          return ["#2563eb", "#0ea5e9"]; // blue-600 to cyan-500
+          return ["#2563eb", "#0ea5e9"];
         case "Beginner":
-          return ["#f59e0b", "#ea580c"]; // yellow-600 to orange-500
+          return ["#f59e0b", "#ea580c"];
         case "Foundation":
-          return ["#8b5cf6", "#ec4899"]; // purple-600 to pink-500
+          return ["#8b5cf6", "#ec4899"];
         default:
-          return ["#4b5563", "#6b7280"]; // gray-600 to gray-500
+          return ["#4b5563", "#6b7280"];
       }
     };
 
@@ -759,7 +754,7 @@ const ExamPlayer = ({ examId, showCertificate }) => {
               style={[
                 styles.resultsIconContainer,
                 {
-                  backgroundColor: passed ? "#10b981" : "#ef4444", // green-600 or red-600
+                  backgroundColor: passed ? "#10b981" : "#ef4444",
                 },
               ]}
             >
@@ -853,9 +848,9 @@ const ExamPlayer = ({ examId, showCertificate }) => {
               <TouchableOpacity
                 onPress={() => router.replace("/student/dashboard")}
                 style={[
-                  styles.startButton, // Reusing startButton for consistent style
+                  styles.startButton,
                   {
-                    backgroundColor: getLevelColor(userLevel)[0], // Use first color of level gradient
+                    backgroundColor: getLevelColor(userLevel)[0],
                     shadowColor: "#000",
                     shadowOffset: { width: 0, height: 4 },
                     shadowOpacity: 0.1,
@@ -881,7 +876,7 @@ const ExamPlayer = ({ examId, showCertificate }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 0, // Full screen gradient
+    paddingTop: 0,
   },
   fullScreenCenter: {
     flex: 1,
@@ -893,14 +888,14 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 48, // py-12
-    paddingHorizontal: 16, // px-4
+    paddingVertical: 48,
+    paddingHorizontal: 16,
   },
   scrollViewContentExam: {
     flexGrow: 1,
-    paddingVertical: 16, // Adjusted for fixed header
+    paddingVertical: 16,
     paddingHorizontal: 16,
-    paddingTop: 80, // Space for fixed header
+    paddingTop: 80,
   },
   spinner: {
     marginBottom: 16,
@@ -947,8 +942,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
-
-  // Welcome Screen Styles
   welcomeCard: {
     backgroundColor: "rgba(255, 255, 255, 0.8)",
     borderRadius: 24,
@@ -967,7 +960,7 @@ const styles = StyleSheet.create({
   welcomeIconContainer: {
     width: 80,
     height: 80,
-    backgroundColor: "#8b5cf6", // Simplified gradient
+    backgroundColor: "#8b5cf6",
     borderRadius: 24,
     justifyContent: "center",
     alignItems: "center",
@@ -991,14 +984,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-around",
-    gap: 16, // gap-6
+    gap: 16,
     marginBottom: 32,
     width: "100%",
   },
   statCard: {
     flex: 1,
-    minWidth: 120, // Ensure cards don't get too small
-    backgroundColor: "#ede9fe", // purple-50, pink-50, yellow-50 - simplified to purple-50 for consistency
+    minWidth: 120,
+    backgroundColor: "#ede9fe",
     borderRadius: 16,
     padding: 24,
     alignItems: "center",
@@ -1014,8 +1007,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   instructionsBox: {
-    backgroundColor: "#eff6ff", // blue-50
-    borderColor: "#bfdbfe", // blue-200
+    backgroundColor: "#eff6ff",
+    borderColor: "#bfdbfe",
     borderWidth: 1,
     borderRadius: 16,
     padding: 24,
@@ -1024,13 +1017,13 @@ const styles = StyleSheet.create({
   },
   instructionsTitle: {
     fontWeight: "600",
-    color: "#1e40af", // blue-800
+    color: "#1e40af",
     marginBottom: 12,
     flexDirection: "row",
     alignItems: "center",
   },
   instructionItem: {
-    color: "#1c50a3", // blue-700
+    color: "#1c50a3",
     marginBottom: 8,
     fontSize: 15,
   },
@@ -1039,7 +1032,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   startButton: {
-    backgroundColor: "#8b5cf6", // Simplified gradient
+    backgroundColor: "#8b5cf6",
     paddingVertical: 16,
     paddingHorizontal: 32,
     borderRadius: 12,
@@ -1058,7 +1051,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   retakeButton: {
-    backgroundColor: "#8b5cf6", // Simplified gradient
+    backgroundColor: "#8b5cf6",
     paddingVertical: 16,
     paddingHorizontal: 32,
     borderRadius: 12,
@@ -1079,8 +1072,6 @@ const styles = StyleSheet.create({
   buttonIcon: {
     marginLeft: 8,
   },
-
-  // Exam Screen Styles
   examHeaderFixed: {
     position: "absolute",
     top: 0,
@@ -1126,13 +1117,13 @@ const styles = StyleSheet.create({
   timerContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#ede9fe", // purple-50
+    backgroundColor: "#ede9fe",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
   },
   timerText: {
-    fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace", // Monospace font for timer
+    fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
     fontWeight: "600",
     color: "#8b5cf6",
     marginLeft: 4,
@@ -1160,7 +1151,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   questionBadge: {
-    backgroundColor: "#8b5cf6", // Simplified gradient
+    backgroundColor: "#8b5cf6",
     color: "white",
     paddingHorizontal: 12,
     paddingVertical: 4,
@@ -1184,7 +1175,7 @@ const styles = StyleSheet.create({
   },
   mediaImage: {
     width: "100%",
-    height: 200, // h-48
+    height: 200,
     borderRadius: 16,
     borderWidth: 2,
     borderColor: "#e5e7eb",
@@ -1197,7 +1188,7 @@ const styles = StyleSheet.create({
     borderColor: "#e5e7eb",
   },
   optionsContainer: {
-    gap: 12, // space-y-3
+    gap: 12,
   },
   optionButton: {
     width: "100%",
@@ -1208,23 +1199,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   optionButtonSelected: {
-    borderColor: "#8b5cf6", // purple-500
-    backgroundColor: "#f3e8ff", // purple-50
+    borderColor: "#8b5cf6",
+    backgroundColor: "#f3e8ff",
   },
   optionButtonUnselected: {
-    borderColor: "#e5e7eb", // gray-200
+    borderColor: "#e5e7eb",
     backgroundColor: "white",
   },
   optionText: {
     fontSize: 16,
     fontWeight: "500",
-    flex: 1, // Allow text to take available space
+    flex: 1,
   },
   optionTextSelected: {
-    color: "#6d28d9", // purple-700
+    color: "#6d28d9",
   },
   optionTextUnselected: {
-    color: "#1f2937", // gray-800
+    color: "#1f2937",
   },
   optionImage: {
     width: 60,
@@ -1237,33 +1228,45 @@ const styles = StyleSheet.create({
     padding: 16,
     borderWidth: 2,
     borderStyle: "dashed",
-    borderColor: "#d1d5db", // gray-300
+    borderColor: "#d1d5db",
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
     minHeight: 150,
   },
   imagePreviewContainer: {
+    width: "100%",
     alignItems: "center",
   },
   imagePreview: {
     width: "100%",
-    height: 150,
+    height: 200,
     borderRadius: 8,
-    marginBottom: 8,
     resizeMode: "contain",
+    marginBottom: 10,
+  },
+  changeImageButton: {
+    backgroundColor: "#8b5cf6",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
+  changeImageButtonText: {
+    color: "white",
+    fontSize: 14,
   },
   imageUploadPlaceholder: {
     alignItems: "center",
-    paddingVertical: 32,
+    paddingVertical: 16,
   },
   imageUploadText: {
-    color: "#6b7280", // gray-500
+    color: "#6b7280",
     fontSize: 16,
+    marginTop: 8,
     marginBottom: 4,
   },
   imageUploadTextSmall: {
-    color: "#9ca3af", // gray-400
+    color: "#9ca3af",
     fontSize: 12,
   },
   textInput: {
@@ -1274,7 +1277,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     fontSize: 16,
     color: "#1f2937",
-    textAlignVertical: "top", // For multiline
+    textAlignVertical: "top",
   },
   examNavigationButtons: {
     flexDirection: "row",
@@ -1284,7 +1287,7 @@ const styles = StyleSheet.create({
   navButton: {
     paddingVertical: 12,
     paddingHorizontal: 24,
-    backgroundColor: "#f3f4f6", // gray-100
+    backgroundColor: "#f3f4f6",
     borderRadius: 12,
     flexDirection: "row",
     alignItems: "center",
@@ -1294,7 +1297,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   navButtonText: {
-    color: "#4b5563", // gray-700
+    color: "#4b5563",
     fontWeight: "500",
     fontSize: 16,
     marginLeft: 8,
@@ -1305,7 +1308,7 @@ const styles = StyleSheet.create({
   navButtonPrimary: {
     paddingVertical: 12,
     paddingHorizontal: 24,
-    backgroundColor: "#8b5cf6", // Simplified gradient
+    backgroundColor: "#8b5cf6",
     borderRadius: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
@@ -1324,7 +1327,7 @@ const styles = StyleSheet.create({
   submitExamButton: {
     paddingVertical: 12,
     paddingHorizontal: 24,
-    backgroundColor: "#10b981", // green-600
+    backgroundColor: "#10b981",
     borderRadius: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
@@ -1340,8 +1343,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 16,
   },
-
-  // Results Screen Styles
   resultsCard: {
     backgroundColor: "rgba(255, 255, 255, 0.8)",
     borderRadius: 24,
@@ -1379,7 +1380,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   certificateDownloadedText: {
-    color: "#10b981", // green-600
+    color: "#10b981",
     marginTop: 8,
     fontSize: 16,
     fontWeight: "500",
@@ -1393,16 +1394,16 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   statCardPassed: {
-    backgroundColor: "#ede9fe", // purple-50
+    backgroundColor: "#ede9fe",
   },
   statCardFailed: {
-    backgroundColor: "#fee2e2", // red-50
+    backgroundColor: "#fee2e2",
   },
   statCardPink: {
-    backgroundColor: "#fce7f3", // pink-50
+    backgroundColor: "#fce7f3",
   },
   statCardOrange: {
-    backgroundColor: "#fff7ed", // orange-50
+    backgroundColor: "#fff7ed",
   },
   statTitleLarge: {
     fontSize: 24,
@@ -1413,17 +1414,13 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     marginBottom: 8,
-    // This text will be rendered with a gradient by the LinearGradient wrapper
-    // In React Native, text gradients are often achieved by masking or custom components.
-    // For simplicity, we'll rely on the LinearGradient wrapper for the background.
-    // If true text gradient is needed, it's more complex.
-    color: "white", // Fallback color, actual color comes from gradient
+    color: "white",
   },
   levelGradientTextWrapper: {
-    borderRadius: 8, // Match statCard's inner content
+    borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    alignSelf: "center", // Center the gradient text
+    alignSelf: "center",
   },
   statLabel: {
     color: "#4b5563",
@@ -1431,7 +1428,7 @@ const styles = StyleSheet.create({
   },
   minScoreText: {
     fontSize: 14,
-    color: "#ef4444", // red-500
+    color: "#ef4444",
     marginTop: 8,
   },
   resultsDescriptionBox: {
@@ -1442,12 +1439,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   resultsDescriptionBoxPassed: {
-    backgroundColor: "#eff6ff", // blue-50
-    borderColor: "#bfdbfe", // blue-200
+    backgroundColor: "#eff6ff",
+    borderColor: "#bfdbfe",
   },
   resultsDescriptionBoxFailed: {
-    backgroundColor: "#fff7ed", // orange-50
-    borderColor: "#fed7aa", // orange-200
+    backgroundColor: "#fff7ed",
+    borderColor: "#fed7aa",
   },
   resultsDescriptionText: {
     fontSize: 18,
@@ -1458,8 +1455,8 @@ const styles = StyleSheet.create({
   textBlueDark: { color: "#1e40af" },
   textOrangeDark: { color: "#c2410c" },
   resultsButtonsContainer: {
-    flexDirection: "column", // Stack buttons vertically
-    gap: 16, // space-y-4
+    flexDirection: "column",
+    gap: 16,
     width: "100%",
     alignItems: "center",
   },

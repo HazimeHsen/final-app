@@ -370,7 +370,7 @@ const styles = StyleSheet.create({
     position: "relative",
     width: "100%",
     maxWidth: 380,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    backgroundColor: "rgba(255, 255, 255, 1)",
     borderRadius: 24,
     padding: 24,
     shadowColor: "#000",

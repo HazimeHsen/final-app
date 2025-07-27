@@ -39,25 +39,8 @@ const LevelExam = () => {
         const progressRes = await videoAPI.getLevelProgress(levelId);
         const isComplete = progressRes?.data?.is_complete;
 
-        // MOCK for level 1 and 2 (as per original code)
-        if (levelId === 1 || levelId === 2) {
-          console.log("MOCK completion for level 1 or 2, setting examId to 3");
-          setExamId(3);
-          setLoading(false);
-          return;
-        }
-
-        if (levelId === 3) {
-          console.log("MOCK completion for level 1 or 2, setting examId to 3");
-          setExamId(5);
-          setLoading(false);
-          return;
-        }
-
-
-        if (levelId === 5) {
-          console.log("MOCK completion for level 1 or 2, setting examId to 3");
-          setExamId(7);
+        if (levelId) {
+          setExamId(levelId);
           setLoading(false);
           return;
         }
