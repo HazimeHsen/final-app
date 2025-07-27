@@ -492,7 +492,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    gap: 24,
+    gap: 12,
   },
   skeletonCourseCard: {
     height: 256,
@@ -640,7 +640,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    gap: 24,
+    gap: 12,
     marginBottom: 32,
   },
   statCard: {
