@@ -55,7 +55,11 @@ const LevelDetailStudent = () => {
         }
 
         const coursesResponse = await courseAPI.getCoursesByLevel(levelId);
-        const fetchedCourses = coursesResponse.data || [];
+        let fetchedCourses = coursesResponse.data || [];
+
+        // Sort courses by their ID to ensure consistent order
+        fetchedCourses = fetchedCourses.sort((a, b) => a.id - b.id);
+
         const courseIds = fetchedCourses.map((c) => c.id);
 
         let progressMap = {};
@@ -66,12 +70,21 @@ const LevelDetailStudent = () => {
           progressMap = progressResponse.data || {};
         }
 
-        const augmentedCourses = fetchedCourses.map((course) => {
+        // Track previous course completion status
+        let previousCourseCompleted = true;
+
+        const augmentedCourses = fetchedCourses.map((course, index) => {
           const progress = progressMap[course.id] || {};
           const hasContent = (progress.total_lessons || 0) > 0;
           const isCompleted = hasContent
             ? progress.is_complete || false
             : false;
+
+          // First course is always unlocked, others depend on previous course completion
+          const isUnlocked = index === 0 ? true : previousCourseCompleted;
+
+          // Update the previous course completed status for next iteration
+          previousCourseCompleted = isCompleted;
 
           return {
             id: course.id,
@@ -80,14 +93,16 @@ const LevelDetailStudent = () => {
             duration: `${course.duration || 10} min`,
             emoji: "📘",
             isCompleted,
-            isUnlocked: true,
+            isUnlocked,
             completedChapters: progress.completed_lessons || 0,
             chapters: progress.total_lessons || 0,
             hasContent,
             xpReward: course.xp_reward || 0,
             difficulty: course.difficulty || "Medium",
+            order: index + 1, // Track course order
           };
         });
+
         setCourses(augmentedCourses);
       } catch (error) {
         console.error("Failed to fetch level or course data:", error);
@@ -209,12 +224,6 @@ const LevelDetailStudent = () => {
                       {courses.length} Course{courses.length !== 1 ? "s" : ""}
                     </Text>
                   </View>
-                  <View style={styles.levelStatItem}>
-                    <Clock size={16} color="white" />
-                    <Text style={styles.levelStatText}>
-                      {totalEstimatedHours} min
-                    </Text>
-                  </View>
                   {level.is_paid && (
                     <View style={styles.levelStatItem}>
                       <Text style={styles.levelPriceBadge}>${level.price}</Text>
@@ -277,11 +286,6 @@ const LevelDetailStudent = () => {
               <Text style={styles.statLabel}>Locked</Text>
             </View>
           </View>
-          <View style={[styles.statCard, styles.statCardOrange]}>
-            <View style={styles.statIconBgOrange}>
-              <Trophy size={24} color="#f59e0b" />
-            </View>
-          </View>
         </View>
 
         {/* Courses Grid */}
@@ -307,17 +311,21 @@ const LevelDetailStudent = () => {
                     <View style={styles.lockedContent}>
                       <Lock size={32} color="#9ca3af" />
                       <Text style={styles.lockedText}>
-                        Complete previous courses
+                        {index === 0
+                          ? "Coming soon"
+                          : "Complete previous course to unlock"}
                       </Text>
                     </View>
                   </View>
                 )}
+
                 {/* Completed Badge */}
                 {course.isCompleted && course.hasContent && (
                   <View style={styles.completedBadge}>
                     <CheckCircle size={16} color="white" />
                   </View>
                 )}
+
                 {/* Course Content */}
                 <View style={styles.courseContent}>
                   <Text style={styles.courseEmoji}>{course.emoji}</Text>
@@ -326,6 +334,7 @@ const LevelDetailStudent = () => {
                     {course.description}
                   </Text>
                 </View>
+
                 {/* Progress Bar - Always show */}
                 <View style={styles.courseProgressBarContainer}>
                   <View style={styles.courseProgressBarHeader}>
@@ -349,6 +358,7 @@ const LevelDetailStudent = () => {
                     {course.completedChapters} of {course.chapters} chapters
                   </Text>
                 </View>
+
                 {/* Course Stats */}
                 <View style={styles.courseStatsContainer}>
                   <View style={styles.courseStatItem}>
@@ -366,6 +376,7 @@ const LevelDetailStudent = () => {
                     </Text>
                   </View>
                 </View>
+
                 {/* Action Button */}
                 {course.isUnlocked ? (
                   <Link
@@ -453,6 +464,7 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
+    padding: 20,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#f9fafb",
@@ -513,7 +525,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     marginLeft: 8,
   },
-
   breadcrumb: {
     flexDirection: "row",
     alignItems: "center",
@@ -533,10 +544,10 @@ const styles = StyleSheet.create({
     color: "#1f2937",
     fontWeight: "500",
   },
-
   levelHeaderCard: {
     borderRadius: 24,
     padding: 6,
+    paddingVertical: 20,
     marginBottom: 32,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 10 },
@@ -625,7 +636,6 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.8)",
     marginTop: 8,
   },
-
   progressStatsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -682,7 +692,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#4b5563",
   },
-
   coursesGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -699,7 +708,6 @@ const styles = StyleSheet.create({
     shadowRadius: 15,
     elevation: 10,
     borderWidth: 2,
-
     justifyContent: "space-between",
     width: "100%",
     maxWidth: 380,
@@ -712,6 +720,28 @@ const styles = StyleSheet.create({
   courseCardLocked: {
     borderColor: "#e5e7eb",
     opacity: 0.6,
+  },
+  courseNumberBadge: {
+    position: "absolute",
+    top: -12,
+    left: -12,
+    backgroundColor: "#8b5cf6",
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
+    zIndex: 20,
+  },
+  courseNumberText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 14,
   },
   lockedOverlay: {
     position: "absolute",
@@ -863,7 +893,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
   },
-
   levelCompletedCard: {
     marginTop: 48,
     borderRadius: 24,
@@ -912,7 +941,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     marginRight: 8,
   },
-
   backToAllLevelsContainer: {
     marginTop: 32,
     alignItems: "center",

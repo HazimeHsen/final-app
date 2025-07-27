@@ -136,8 +136,8 @@ const Certificate = () => {
                 <Text style={[styles.tableHeaderText, styles.columnDate]}>Issued At</Text>
                 <Text style={[styles.tableHeaderText, styles.columnActions]}>Actions</Text>
               </View>
-              {allCertificates.map((certificate) => (
-                <View key={certificate.id} style={styles.tableRow}>
+              {allCertificates.map((certificate,id) => (
+                <View key={id} style={styles.tableRow}>
                   <Text style={[styles.tableCell, styles.columnLevel]}>{certificate.level_id}</Text>
                   <TouchableOpacity
                     onPress={() => {

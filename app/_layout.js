@@ -1,7 +1,11 @@
-import { Stack } from "expo-router"
-import { AuthProvider } from "../contexts/AuthContext"
-import { StatusBar } from "expo-status-bar"
-import { SafeAreaProvider } from "react-native-safe-area-context"
+import { Stack } from "expo-router";
+import { AuthProvider } from "../contexts/AuthContext";
+import { StatusBar } from "expo-status-bar";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+
+import { LogBox } from "react-native";
+
+LogBox.ignoreLogs(["Text strings must be rendered within a <Text> component"]);
 
 export default function RootLayout() {
   return (
@@ -16,5 +20,5 @@ export default function RootLayout() {
         </Stack>
       </SafeAreaProvider>
     </AuthProvider>
-  )
+  );
 }
