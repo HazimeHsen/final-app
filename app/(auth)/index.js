@@ -241,38 +241,6 @@ const Login = () => {
                 )}
               </TouchableOpacity>
 
-              {/* Social Login */}
-              <View style={styles.socialLoginContainer}>
-                <View style={styles.dividerContainer}>
-                  <View style={styles.dividerLine} />
-                  <Text style={styles.dividerText}>Or continue with</Text>
-                  <View style={styles.dividerLine} />
-                </View>
-
-                <View style={styles.socialButtonsContainer}>
-                  <TouchableOpacity style={styles.socialButton}>
-                    <Image
-                      source={{
-                        uri: "https://img.icons8.com/color/48/000000/google-logo.png",
-                      }}
-                      style={styles.socialIcon}
-                    />
-                    <Text style={styles.socialButtonText}>Google</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity style={styles.socialButton}>
-                    <Image
-                      source={{
-                        uri: "https://img.icons8.com/color/48/000000/facebook-new.png",
-                      }}
-                      style={styles.socialIcon}
-                    />
-                    <Text style={styles.socialButtonText}>Facebook</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* Sign Up Link */}
               <View style={styles.signupLinkContainer}>
                 <Text style={styles.signupText}>
                   Don't have an account?{" "}
@@ -313,7 +281,7 @@ const styles = StyleSheet.create({
     // For now, it's hidden by default in RN
   },
   illustrationCard: {
-    backgroundColor: "rgba(255, 255, 255, 0.2)", // bg-white/20
+    backgroundColor: "rgba(255, 255, 255, 1)", // bg-white/20
     borderRadius: 24, // rounded-3xl
     padding: 32, // p-8
     borderWidth: 1,
@@ -372,7 +340,7 @@ const styles = StyleSheet.create({
     // mx-auto lg:mx-0 handled by parent flex
   },
   card: {
-    backgroundColor: "rgba(255, 255, 255, 0.8)", // bg-white/80
+    backgroundColor: "rgba(255, 255, 255, 1)", // bg-white/80
     borderRadius: 24, // rounded-3xl
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 10 },

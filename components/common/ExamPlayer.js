@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useEffect, useContext } from "react";
 import {
   View,
@@ -18,12 +17,10 @@ import { useVideoPlayer, VideoView } from "expo-video";
 import * as ImagePicker from "expo-image-picker";
 import * as WebBrowser from "expo-web-browser";
 import { useRouter } from "expo-router";
-
 import {
   Clock,
   CheckCircle,
   ArrowRight,
-  ArrowLeft,
   BookOpen,
   Award,
   Target,
@@ -31,7 +28,6 @@ import {
   AlertCircle,
   Image as ImageIcon,
 } from "lucide-react-native";
-
 import { examAPI, certificateAPI } from "../../api";
 import { AuthContext } from "../../contexts/AuthContext";
 
@@ -40,7 +36,6 @@ const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 const ExamPlayer = ({ examId, showCertificate }) => {
   const router = useRouter();
   const { user } = useContext(AuthContext);
-
   const [currentScreen, setCurrentScreen] = useState("welcome");
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState({});
@@ -58,7 +53,6 @@ const ExamPlayer = ({ examId, showCertificate }) => {
   const [hasCertificate, setHasCertificate] = useState(false);
 
   const currentQuestion = examQuestions[currentQuestionIndex];
-
   const player = useVideoPlayer(
     currentQuestion?.type === "video" && currentQuestion?.media
       ? { uri: `${API_BASE_URL}${currentQuestion.media}` }
@@ -128,11 +122,9 @@ const ExamPlayer = ({ examId, showCertificate }) => {
         setCurrentScreen("results");
         return;
       }
-
       const response = await examAPI.getById(examId);
       setExamInfo(response.data.exam);
       setTimeRemaining(response.data.exam.duration * 60 || 1800);
-
       const formattedQuestions = response.data.questions.map((question) => ({
         id: question.id,
         question: question.question_text,
@@ -180,7 +172,59 @@ const ExamPlayer = ({ examId, showCertificate }) => {
     }
   };
 
-  const handleImageUpload = async (questionId) => {
+  const processImage = (result, questionId) => {
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      const uri = result.assets[0].uri;
+      setAnswers((prev) => ({
+        ...prev,
+        [questionId]: { file: uri, imagePreview: uri },
+      }));
+    }
+  };
+
+  const handleImageUpload = (questionId) => {
+    Alert.alert(
+      "Choose Image Source",
+      "Would you like to take a new photo or select one from your library?",
+      [
+        {
+          text: "Take Photo",
+          onPress: () => takePhoto(questionId),
+        },
+        {
+          text: "Choose from Library",
+          onPress: () => pickImageFromLibrary(questionId),
+        },
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
+  const takePhoto = async (questionId) => {
+    if (Platform.OS !== "web") {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission required",
+          "Please grant camera permissions to take photos."
+        );
+        return;
+      }
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.5,
+    });
+    processImage(result, questionId);
+  };
+
+  const pickImageFromLibrary = async (questionId) => {
     if (Platform.OS !== "web") {
       const { status } =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -192,21 +236,13 @@ const ExamPlayer = ({ examId, showCertificate }) => {
         return;
       }
     }
-
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.5,
     });
-
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      const uri = result.assets[0].uri;
-      setAnswers((prev) => ({
-        ...prev,
-        [questionId]: { file: uri, imagePreview: uri },
-      }));
-    }
+    processImage(result, questionId);
   };
 
   useEffect(() => {
@@ -263,15 +299,12 @@ const ExamPlayer = ({ examId, showCertificate }) => {
         ) {
           return null;
         }
-
         const uri = answers[question.id].file;
         const filename = uri.split("/").pop();
         const match = /\.(\w+)$/.exec(filename);
         const type = match ? `image/${match[1]}` : `image`;
-
         const formData = new FormData();
         formData.append("image", { uri, name: filename, type });
-
         try {
           const response = await examAPI.uploadAnswerImage(
             examId,
@@ -291,9 +324,7 @@ const ExamPlayer = ({ examId, showCertificate }) => {
           return { questionId: question.id, photoPath: null };
         }
       });
-
       const imageUploadResults = await Promise.all(imageUploadPromises);
-
       const submissions = examQuestions.map((question) => {
         if (question.answer_type === "image_upload") {
           const upload = imageUploadResults.find(
@@ -319,17 +350,14 @@ const ExamPlayer = ({ examId, showCertificate }) => {
           photo: null,
         };
       });
-
       const res = await examAPI.submit(examId, { submissions: submissions });
       console.log("Exam submission response:", res.data);
-
       const gradingResponse = await examAPI.gradeStudent(examId, user.id);
       console.log("Grading response:", gradingResponse.data);
       setScore(Number(gradingResponse.data.score));
       setUserLevel(gradingResponse.data.level);
       const levelIdFromGrade = gradingResponse.data.level_id;
       setLevelId(levelIdFromGrade);
-
       if (
         gradingResponse.data.score >= 50 &&
         levelIdFromGrade &&
@@ -374,9 +402,7 @@ const ExamPlayer = ({ examId, showCertificate }) => {
 
   const renderMedia = (question) => {
     if (!question?.media) return null;
-
     const mediaUrl = `${API_BASE_URL}${question.media}`;
-
     switch (question.type) {
       case "image":
         return (
@@ -442,7 +468,6 @@ const ExamPlayer = ({ examId, showCertificate }) => {
         </View>
       );
     }
-
     if (question.answer_type === "image_upload") {
       return (
         <View style={styles.optionsContainer}>
@@ -478,7 +503,6 @@ const ExamPlayer = ({ examId, showCertificate }) => {
         </View>
       );
     }
-
     return (
       <View style={styles.optionsContainer}>
         <TextInput
@@ -540,7 +564,6 @@ const ExamPlayer = ({ examId, showCertificate }) => {
               {examInfo?.description ||
                 "Welcome to the Lebanese Sign Language proficiency assessment."}
             </Text>
-
             <View style={styles.welcomeStatsGrid}>
               <View style={styles.statCard}>
                 <Clock size={32} color="#8b5cf6" />
@@ -567,7 +590,6 @@ const ExamPlayer = ({ examId, showCertificate }) => {
                 </Text>
               </View>
             </View>
-
             <View style={styles.instructionsBox}>
               <Text style={styles.instructionsTitle}>
                 <Users size={20} color="#2563eb" style={{ marginRight: 8 }} />{" "}
@@ -591,7 +613,6 @@ const ExamPlayer = ({ examId, showCertificate }) => {
                 • The exam will auto-submit when time expires
               </Text>
             </View>
-
             <View style={styles.welcomeButtonContainer}>
               {!passed && hasPreviousSubmission ? (
                 <TouchableOpacity
@@ -623,7 +644,6 @@ const ExamPlayer = ({ examId, showCertificate }) => {
   if (currentScreen === "exam" && examQuestions.length > 0) {
     const currentQ = examQuestions[currentQuestionIndex];
     const progress = ((currentQuestionIndex + 1) / examQuestions.length) * 100;
-
     return (
       <LinearGradient colors={["#f3e8ff", "#fce7f3"]} style={styles.container}>
         <View style={styles.examHeaderFixed}>
@@ -650,7 +670,6 @@ const ExamPlayer = ({ examId, showCertificate }) => {
             </View>
           </View>
         </View>
-
         <ScrollView contentContainerStyle={styles.scrollViewContentExam}>
           <View style={styles.examQuestionCard}>
             <View style={styles.questionMeta}>
@@ -662,10 +681,8 @@ const ExamPlayer = ({ examId, showCertificate }) => {
               </Text>
             </View>
             <Text style={styles.questionText}>{currentQ.question}</Text>
-
             {renderMedia(currentQ)}
             {renderOptions(currentQ)}
-
             <View style={styles.examNavigationButtons}>
               <TouchableOpacity
                 onPress={handlePreviousQuestion}
@@ -684,7 +701,6 @@ const ExamPlayer = ({ examId, showCertificate }) => {
                   Previous
                 </Text>
               </TouchableOpacity>
-
               {currentQuestionIndex === examQuestions.length - 1 ? (
                 <TouchableOpacity
                   onPress={handleSubmitExam}
@@ -777,7 +793,6 @@ const ExamPlayer = ({ examId, showCertificate }) => {
                 Your certificate has been downloaded!
               </Text>
             )}
-
             <View style={styles.resultsStatsGrid}>
               <View
                 style={[
@@ -817,7 +832,6 @@ const ExamPlayer = ({ examId, showCertificate }) => {
                 <Text style={styles.statLabel}>Your Level</Text>
               </View>
             </View>
-
             <View
               style={[
                 styles.resultsDescriptionBox,
@@ -835,7 +849,6 @@ const ExamPlayer = ({ examId, showCertificate }) => {
                 {getLevelDescription(userLevel)}
               </Text>
             </View>
-
             <View style={styles.resultsButtonsContainer}>
               {!passed && (
                 <TouchableOpacity
@@ -870,7 +883,12 @@ const ExamPlayer = ({ examId, showCertificate }) => {
     );
   }
 
-  return null;
+  return (
+    <>
+      {/* Existing ExamPlayer UI */}
+      {null}
+    </>
+  );
 };
 
 const styles = StyleSheet.create({
