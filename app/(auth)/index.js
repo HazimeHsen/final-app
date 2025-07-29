@@ -66,15 +66,8 @@ const Login = () => {
       await login(access_token, userData, formData.rememberMe);
 
       try {
-        if (userData.role_id === 1) {
           setRedirectTo("/admin/users"); // Updated path for Expo Router
-        } else if (userData.role_id === 2) {
-          setRedirectTo("/instructor/dashboard"); // Updated path for Expo Router
-        } else if (userData.role_id === 3) {
-          setRedirectTo("/student/dashboard"); // Updated path for Expo Router
-        } else {
-          setError("Unauthorized role.");
-        }
+       
       } catch (decodeError) {
         console.error("User role processing error:", decodeError);
         setError("Failed to process your login. Please try again.");

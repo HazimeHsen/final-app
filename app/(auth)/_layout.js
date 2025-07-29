@@ -16,13 +16,7 @@ export default function AuthLayout() {
 
   // If the user is already logged in, redirect them to the appropriate dashboard
   if (user) {
-    if (user.role_id === 1) {
-      return <Redirect href="/admin/users" />
-    } else if (user.role_id === 2) {
-      return <Redirect href="/instructor/dashboard" />
-    } else if (user.role_id === 3) {
       return <Redirect href="/student/dashboard" />
-    }
   }
 
   return (

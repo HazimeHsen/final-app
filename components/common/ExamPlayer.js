@@ -961,7 +961,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   welcomeCard: {
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    backgroundColor: "rgba(255, 255, 255, 1)",
     borderRadius: 24,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 10 },
